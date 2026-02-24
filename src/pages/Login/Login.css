@@ -92,28 +92,39 @@
 }
 
 .password-input-container input {
-  padding-right: 45px;
+  padding-right: 45px; /* Aumente se necessário para o tamanho do ícone */
 }
 
 .password-toggle {
   position: absolute;
   right: 10px;
-  background: none;
+  background: #666;
   border: none;
   cursor: pointer;
-  font-size: 20px;
   padding: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #718096;
-  transition: color 0.2s;
   border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+
+.password-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(211, 211, 212, 0.3);
+}
+
+.password-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
 }
 
 .password-toggle:hover {
   color: #667eea;
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: rgba(217, 221, 236, 0.1);
 }
 
 .login-button {

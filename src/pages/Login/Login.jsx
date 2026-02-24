@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import olhoAberto from '/src/assets/icons8-visível-50.png'
+import olhoFechado from '/src/assets/icons8-ocultar-50.png'
+
 import './Login.css'
 
 function Login({ onLogin }) {
@@ -37,7 +40,7 @@ function Login({ onLogin }) {
       <div className="login-container">
         <div className="login-box">
           <div className="login-header">
-            <h1>PDF Manager</h1>
+            <h1>Gerenciador de Pdf</h1>
             <p>Faça login para acessar</p>
           </div>
 
@@ -72,7 +75,11 @@ function Login({ onLogin }) {
                   onClick={() => setShowPassword(!showPassword)}
                   title={showPassword ? "Esconder senha" : "Mostrar senha"}
                 >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                  <img 
+                    src={showPassword ? olhoAberto : olhoFechado} 
+                    alt={showPassword ? "Esconder senha" : "Mostrar senha"}
+                    className="password-icon"
+                  />
                 </button>
               </div>
             </div>
