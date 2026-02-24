@@ -2,8 +2,32 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Dashboard.css'
 
+
+const useLocalStorage = (key, initialValue) => {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  return [storedValue, setValue];
+};
+
 function Dashboard({ username, onLogout }) {
-  const [pdfFiles, setPdfFiles] = useState([])
+  const [pdfFiles, setPdfFiles] = useLocalStorage('pdfiles',[])
   const [selectedFile, setSelectedFile] = useState(null)
   
   const navigate = useNavigate()
@@ -26,7 +50,6 @@ function Dashboard({ username, onLogout }) {
   const handleUpload = () => {
     if (selectedFile) {
       const fileUrl = URL.createObjectURL(selectedFile)
-      
       const newFile = {
         id: Date.now(),
         name: selectedFile.name,
@@ -95,7 +118,7 @@ function Dashboard({ username, onLogout }) {
         <div className="dashboard-box">
           <div className="dashboard-header">
             <div className="header-with-logout">
-              <h1>PDF Manager</h1>
+              <h1>Gerenciador de PDF</h1>
               <button onClick={handleLogout} className="logout-button">
                 Sair
               </button>
