@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Botao from '../../Components/Button/Button'
 import usersData from '/src/Api/users.json' // Importa o JSON
 import olhoAberto from '/src/assets/icons8-visível-50.png'
 import olhoFechado from '/src/assets/icons8-ocultar-50.png'
@@ -89,17 +90,8 @@ function Login({ onLogin }) {
               </div>
             )}
 
-            <button type="submit" className="login-button">
-              Entrar
-            </button>
-            <button 
-              type="button" 
-              className="login-button"
-              onClick={() => navigate('/registrar')}
-              >
-              Criar Conta
-            </button>
-
+            <Botao onClick={handleLogin} nome={"Entrar"} tipo={"submit"} />
+            <Botao onClick={() => navigate('/registrar')} nome={"Criar Conta"} tipo={"button"} />
             <div className="login-hint">
               <p><strong>Usuários de teste:</strong></p>
               {users.map(user => (

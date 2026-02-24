@@ -159,28 +159,7 @@
   border: 1px solid #9ae6b4;
 }
 
-.register-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  width: 100%;
-}
 
-.register-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-}
-
-.register-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
 .login-link {
   text-align: center;

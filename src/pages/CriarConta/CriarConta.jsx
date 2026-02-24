@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Botao from '../../Components/Button/Button.jsx'
 import olhoAberto from '/src/assets/icons8-visível-50.png'
 import olhoFechado from '/src/assets/icons8-ocultar-50.png'
 import './CriarConta.css'
@@ -214,13 +215,8 @@ function Register() {
               </div>
             )}
 
-            <button 
-              type="submit" 
-              className="register-button"
-              disabled={loading}
-            >
-              {loading ? 'Cadastrando...' : 'Cadastrar'}
-            </button>
+
+            <Botao nome={"Cadastrar"} tipo={"submit"} onClick={handleSubmit}/>
 
             <div className="login-link">
               <p>
