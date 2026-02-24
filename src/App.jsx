@@ -17,20 +17,16 @@ function App() {
 
   const handleUpload = () => {
     if (selectedFile) {
-      // Adiciona o arquivo à lista
       const newFile = {
         id: Date.now(),
         name: selectedFile.name,
-        size: (selectedFile.size / 1024).toFixed(2), // Tamanho em KB
+        size: (selectedFile.size / 1024).toFixed(2),
         uploadDate: new Date().toLocaleDateString('pt-BR')
       }
       
       setPdfFiles([...pdfFiles, newFile])
       setSelectedFile(null)
-      
-      // Limpa o input file
       document.getElementById('pdf-upload').value = ''
-      
       alert('Arquivo importado com sucesso!')
     }
   }
@@ -41,82 +37,74 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Gerenciador de Arquivos PDF</h1>
-      </header>
+      <div className="login-container">
+        <div className="login-box">
+          <div className="login-header">
+            <h1>PDF Manager</h1>
+            <p>Gerencie seus arquivos PDF</p>
+          </div>
 
-      <main className="app-main">
-        <section className="upload-section">
-          <h2>Importar Novo PDF</h2>
-          <div className="upload-container">
-            <input
-              type="file"
-              id="pdf-upload"
-              accept=".pdf"
-              onChange={handleFileChange}
-              className="file-input"
-            />
+          <div className="upload-section">
+            <h2>Importar PDF</h2>
+            <div className="upload-container">
+              <input
+                type="file"
+                id="pdf-upload"
+                accept=".pdf"
+                onChange={handleFileChange}
+                className="file-input"
+              />
+              
+              {selectedFile && (
+                <div className="selected-file-info">
+                  <p><strong>Arquivo:</strong> {selectedFile.name}</p>
+                  <p><strong>Tamanho:</strong> {(selectedFile.size / 1024).toFixed(2)} KB</p>
+                  <button 
+                    onClick={handleUpload}
+                    className="upload-button"
+                  >
+                    Confirmar Importação
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="list-section">
+            <h2>Arquivos Importados</h2>
             
-            {selectedFile && (
-              <div className="selected-file-info">
-                <p>Arquivo selecionado: {selectedFile.name}</p>
-                <p>Tamanho: {(selectedFile.size / 1024).toFixed(2)} KB</p>
-                <button 
-                  onClick={handleUpload}
-                  className="upload-button"
-                >
-                  Confirmar Importação
-                </button>
+            {pdfFiles.length === 0 ? (
+              <p className="empty-message">Nenhum arquivo PDF importado</p>
+            ) : (
+              <div className="pdf-list">
+                {pdfFiles.map((file) => (
+                  <div key={file.id} className="pdf-item">
+                    <div className="pdf-info">
+                      <span className="pdf-name">{file.name}</span>
+                      <span className="pdf-details">
+                        {file.size} KB • {file.uploadDate}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="remove-button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                
+                <div className="pdf-stats">
+                  <span>Total: {pdfFiles.length} arquivo(s)</span>
+                  <span>Total: {
+                    pdfFiles.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(2)
+                  } </span>
+                </div>
               </div>
             )}
           </div>
-        </section>
-
-        <section className="list-section">
-          <h2>Arquivos Exportados</h2>
-          
-          {pdfFiles.length === 0 ? (
-            <p className="empty-message">Nenhum arquivo PDF importado ainda.</p>
-          ) : (
-            <div className="pdf-list">
-              <table className="pdf-table">
-                <thead>
-                  <tr>
-                    <th>Nome do Arquivo</th>
-                    <th>Tamanho (KB)</th>
-                    <th>Data de Importação</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pdfFiles.map((file) => (
-                    <tr key={file.id}>
-                      <td>{file.name}</td>
-                      <td>{file.size}</td>
-                      <td>{file.uploadDate}</td>
-                      <td>
-                        <button 
-                          onClick={() => handleRemoveFile(file.id)}
-                          className="remove-button"
-                        >
-                          Remover
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              <div className="pdf-stats">
-                <p>Total de arquivos: {pdfFiles.length}</p>
-                <p>Tamanho total: {
-                  pdfFiles.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(2)
-                } KB</p>
-              </div>
-            </div>
-          )}
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   )
 }
