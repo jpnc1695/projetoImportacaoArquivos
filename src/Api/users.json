@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "jpn",
+      "password": "123456",
+      "name": "joao",
+      "email": "teste@teste.com",
+      "role": "user",
+      "createdAt": "2026-02-24T18:21:37.597Z"
+    },
+    {
+      "id": 2,
+      "username": "tiquinho",
+      "password": "123456",
+      "name": "Tiquinho soares",
+      "email": "teste2@teste.com",
+      "role": "user",
+      "createdAt": "2026-02-24T18:24:05.645Z"
+    },
+    {
+      "id": 3,
+      "username": "jp123",
+      "password": "123456",
+      "name": "joao",
+      "email": "teste123@email.com",
+      "role": "user",
+      "createdAt": "2026-02-24T18:53:58.606Z"
+    }
+  ]
+}

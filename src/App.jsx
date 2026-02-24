@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login/Login'
 import Dashboard from './pages/DashBoard/Dashboard'
+import CriarConta from './pages/CriarConta/CriarConta'
 import './App.css'
 
 function App() {
@@ -36,6 +37,10 @@ function App() {
               <Dashboard username={currentUser} onLogout={handleLogout} /> : 
               <Navigate to="/" />
           } 
+        />
+         <Route 
+          path="/registrar" 
+          element={<CriarConta/>}        
         />
       </Routes>
     </BrowserRouter>

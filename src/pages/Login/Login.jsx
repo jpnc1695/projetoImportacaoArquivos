@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import usersData from '/src/Api/users.json' // Importa o JSON
 import olhoAberto from '/src/assets/icons8-visível-50.png'
 import olhoFechado from '/src/assets/icons8-ocultar-50.png'
 
@@ -10,26 +11,24 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState('')
+  const [users, setUsers] = useState([]) // Usa os dados do JSON
   
   const navigate = useNavigate()
 
-  // Mock de usuários
-  const MOCK_USERS = [
-    { username: 'admin', password: '123456' },
-    { username: 'usuario', password: 'senha123' },
-    { username: 'teste', password: 'teste' }
-  ]
+  useEffect(() => {
+    setUsers(usersData.users) // Carrega os usuários do JSON
+  },[])  // Mock de usuários
 
   const handleLogin = (e) => {
     e.preventDefault()
     
-    const user = MOCK_USERS.find(
+    const user = users.find(
       u => u.username === username && u.password === password
     )
 
     if (user) {
-      onLogin(username) // Passa o usuário para o componente pai
-      navigate('/dashboard') // Redireciona para a página de PDFs
+      onLogin(username)
+      navigate('/dashboard')
     } else {
       setLoginError('Usuário ou senha inválidos')
     }
@@ -93,12 +92,19 @@ function Login({ onLogin }) {
             <button type="submit" className="login-button">
               Entrar
             </button>
+            <button 
+              type="button" 
+              className="login-button"
+              onClick={() => navigate('/registrar')}
+              >
+              Criar Conta
+            </button>
 
             <div className="login-hint">
               <p><strong>Usuários de teste:</strong></p>
-              <p>admin / 123456</p>
-              <p>usuario / senha123</p>
-              <p>teste / teste</p>
+              {users.map(user => (
+                <p key={user.id}>{user.username} / {user.password}</p>
+              ))}
             </div>
           </form>
         </div>
