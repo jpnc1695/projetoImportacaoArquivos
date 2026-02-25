@@ -15,6 +15,14 @@
       "email": "pedroAgente@email.com",
       "role": "agente",
       "createdAt": "2026-02-25T16:15:36.296Z"
+    },
+    {
+      "id": 3,
+      "username": "pauloAgente",
+      "name": "paulo",
+      "email": "paulo@agente.com",
+      "role": "agente",
+      "createdAt": "2026-02-25T19:06:11.698Z"
     }
   ]
 }

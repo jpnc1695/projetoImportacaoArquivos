@@ -1,0 +1,519 @@
+/* FileList.css */
+
+/* Container principal da lista */
+.list-section {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+/* Cabeçalho da lista */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-title h2 {
+  color: #444;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* Botão de alternar filtros */
+.filter-toggle-button {
+  background: none;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.filter-toggle-button:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Indicador de filtro ativo */
+.active-filter-indicator {
+  color: #48bb78;
+  font-size: 20px;
+  margin-left: 2px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Container das ações da lista */
+.list-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Botões de ação em lote */
+.download-all-button {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.download-all-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+}
+
+.download-all-button:active {
+  transform: translateY(0);
+}
+
+.remove-all-button {
+  background: #fed7d7;
+  color: #e53e3e;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.remove-all-button:hover {
+  background: #e53e3e;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(229, 62, 62, 0.4);
+}
+
+.remove-all-button:active {
+  transform: translateY(0);
+}
+
+/* Painel de filtros */
+.filters-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Container dos filtros */
+.filters-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 15px;
+}
+
+/* Grupo de filtro individual */
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Select de filtro */
+.filter-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2d3748;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 35px;
+}
+
+.filter-select:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Botão de limpar filtros */
+.clear-filters-button {
+  background: #fed7d7;
+  color: #e53e3e;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  height: 42px;
+}
+
+.clear-filters-button:hover {
+  background: #e53e3e;
+  color: white;
+}
+
+/* Informações dos resultados do filtro */
+.filter-results-info {
+  color: #718096;
+  font-size: 13px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  text-align: right;
+}
+
+/* Lista de PDFs */
+.pdf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Item individual de PDF */
+.pdf-item {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pdf-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Informações do PDF */
+.pdf-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdf-name {
+  display: block;
+  color: #2d3748;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-details {
+  display: block;
+  color: #718096;
+  font-size: 12px;
+}
+
+/* Tags de agente e processo */
+.agente-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+  color: #667eea;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  border: 1px solid #667eea40;
+  letter-spacing: 0.3px;
+}
+
+.processo-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #48bb7820 0%, #38a16920 100%);
+  color: #38a169;
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  border: 1px solid #48bb7840;
+  letter-spacing: 0.3px;
+}
+
+/* Ações do PDF */
+.pdf-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.download-button {
+  background: #ebf8ff;
+  color: #3182ce;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.download-button:hover {
+  background: #3182ce;
+  color: white;
+  transform: scale(1.1);
+}
+
+.download-button:active {
+  transform: scale(0.95);
+}
+
+.remove-button {
+  background: #fed7d7;
+  color: #e53e3e;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-button:hover {
+  background: #e53e3e;
+  color: white;
+  transform: scale(1.1);
+}
+
+.remove-button:active {
+  transform: scale(0.95);
+}
+
+/* Ícones */
+.download-icon, .remove-icon, .filter-icon, .clear-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Estatísticas dos PDFs */
+.pdf-stats {
+  margin-top: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #4a5568;
+  font-weight: 500;
+  border-top: 2px solid #e2e8f0;
+}
+
+/* Mensagem de lista vazia */
+.empty-message {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 30px 20px;
+  font-size: 14px;
+  background: white;
+  border-radius: 8px;
+}
+
+/* Mensagem de nenhum resultado nos filtros */
+.no-results-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 8px;
+  color: #718096;
+}
+
+.no-results-message p {
+  margin-bottom: 10px;
+}
+
+/* Link para limpar filtros */
+.clear-filters-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.clear-filters-link:hover {
+  color: #764ba2;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .list-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .header-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .filter-toggle-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .list-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .download-all-button,
+  .remove-all-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filters-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+  
+  .clear-filters-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-results-info {
+    text-align: center;
+  }
+  
+  .pdf-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .pdf-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .pdf-stats {
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+}
+
+/* Para telas muito pequenas */
+@media (max-width: 400px) {
+  .list-section {
+    padding: 15px;
+  }
+  
+  .filters-panel {
+    padding: 15px;
+  }
+  
+  .pdf-name {
+    font-size: 13px;
+  }
+  
+  .pdf-details {
+    font-size: 11px;
+  }
+  
+  .agente-tag,
+  .processo-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+}
