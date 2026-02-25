@@ -28,11 +28,12 @@ const useLocalStorage = (key, initialValue) => {
 
 function Dashboard({ username, onLogout }) {
   const [pdfFiles, setPdfFiles] = useLocalStorage('pdfiles', [])
-  const [selectedFile, setSelectedFile] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState([]) // Alterado para array
   const [selectedAgent, setSelectedAgent] = useState('')
   const [processNumber, setProcessNumber] = useState('') // Estado para o número do processo
   const [agentes, setAgentes] = useState([]) // Estado para armazenar os agentes do JSON
   const [validationErrors, setValidationErrors] = useState({}) // Estado para erros de validação
+  const [isUploading, setIsUploading] = useState(false) // Estado para controle de upload
 
   const navigate = useNavigate()
 
@@ -53,13 +54,22 @@ function Dashboard({ username, onLogout }) {
   }
 
   const handleFileChange = (event) => {
-    const file = event.target.files[0]
-    if (file && file.type === 'application/pdf') {
-      setSelectedFile(file)
-      // Limpa erros de validação quando um novo arquivo é selecionado
+    const files = Array.from(event.target.files)
+    
+    // Filtra apenas arquivos PDF
+    const pdfFiles = files.filter(file => file.type === 'application/pdf')
+    const nonPdfFiles = files.filter(file => file.type !== 'application/pdf')
+    
+    if (nonPdfFiles.length > 0) {
+      alert(`${nonPdfFiles.length} arquivo(s) ignorado(s) por não serem PDF. Apenas arquivos PDF são permitidos.`)
+    }
+    
+    if (pdfFiles.length > 0) {
+      setSelectedFiles(pdfFiles)
+      // Limpa erros de validação quando novos arquivos são selecionados
       setValidationErrors({})
     } else {
-      alert('Por favor, selecione apenas arquivos PDF')
+      setSelectedFiles([])
       event.target.value = null
     }
   }
@@ -77,36 +87,52 @@ function Dashboard({ username, onLogout }) {
       errors.process = 'O número do processo deve ter pelo menos 5 caracteres'
     }
     
+    if (selectedFiles.length === 0) {
+      errors.files = 'Selecione pelo menos um arquivo PDF'
+    }
+    
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   const handleUpload = () => {
-    if (selectedFile) {
+    if (selectedFiles.length > 0) {
       // Valida os campos antes de fazer o upload
       if (!validateFields()) {
         return // Para se houver erros de validação
       }
       
-      const fileUrl = URL.createObjectURL(selectedFile)
-      const newFile = {
-        id: Date.now(),
-        name: selectedFile.name,
-        size: (selectedFile.size / 1024).toFixed(2),
-        uploadDate: new Date().toLocaleDateString('pt-BR'),
-        file: selectedFile,
-        url: fileUrl,
-        agente: selectedAgent,
-        numeroProcesso: processNumber
-      }
+      setIsUploading(true)
       
-      setPdfFiles([...pdfFiles, newFile])
-      setSelectedFile(null)
+      // Cria um array de novos arquivos
+      const newFiles = selectedFiles.map(file => {
+        const fileUrl = URL.createObjectURL(file)
+        return {
+          id: Date.now() + Math.random(), // ID único para cada arquivo
+          name: file.name,
+          size: (file.size / 1024).toFixed(2),
+          uploadDate: new Date().toLocaleDateString('pt-BR'),
+          file: file,
+          url: fileUrl,
+          agente: selectedAgent,
+          numeroProcesso: processNumber
+        }
+      })
+      
+      // Adiciona todos os novos arquivos à lista existente
+      setPdfFiles([...pdfFiles, ...newFiles])
+      
+      // Limpa o estado
+      setSelectedFiles([])
       setSelectedAgent('')
       setProcessNumber('')
       setValidationErrors({})
+      setIsUploading(false)
+      
+      // Limpa o input file
       document.getElementById('pdf-upload').value = ''
-      alert('Arquivo importado com sucesso!')
+      
+      alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`)
     }
   }
 
@@ -148,6 +174,18 @@ function Dashboard({ username, onLogout }) {
     setPdfFiles(pdfFiles.filter(file => file.id !== id))
   }
 
+  const handleRemoveAllFiles = () => {
+    if (window.confirm('Tem certeza que deseja remover todos os arquivos?')) {
+      // Limpa as URLs dos objetos para evitar vazamento de memória
+      pdfFiles.forEach(file => {
+        if (file.url) {
+          URL.revokeObjectURL(file.url)
+        }
+      })
+      setPdfFiles([])
+    }
+  }
+
   const formatFileSize = (sizeInKB) => {
     if (sizeInKB < 1024) {
       return `${sizeInKB} KB`
@@ -160,6 +198,18 @@ function Dashboard({ username, onLogout }) {
   const getSelectedAgentName = () => {
     const agent = agentes.find(a => a.name === selectedAgent)
     return agent ? `${agent.name} (${agent.username})` : selectedAgent
+  }
+
+  // Função para calcular o tamanho total dos arquivos selecionados
+  const getTotalSelectedSize = () => {
+    const totalKB = selectedFiles.reduce((total, file) => total + (file.size / 1024), 0)
+    return formatFileSize(totalKB.toFixed(2))
+  }
+
+  // Função para limpar a seleção de arquivos
+  const clearSelectedFiles = () => {
+    setSelectedFiles([])
+    document.getElementById('pdf-upload').value = ''
   }
 
   return (
@@ -177,7 +227,7 @@ function Dashboard({ username, onLogout }) {
           </div>
 
           <div className="upload-section">
-            <h2><strong>Importar PDF</strong></h2>
+            <h2><strong>Importar PDFs</strong></h2>
             <div className="upload-container">
               <input
                 type="file"
@@ -185,6 +235,7 @@ function Dashboard({ username, onLogout }) {
                 accept=".pdf"
                 onChange={handleFileChange}
                 className="file-input"
+                multiple // Adiciona atributo multiple para selecionar vários arquivos
               />
               
               {/* SELECT FORA DA CONDIÇÃO - SEMPRE VISÍVEL */}
@@ -245,27 +296,53 @@ function Dashboard({ username, onLogout }) {
                 )}
               </div>
 
-              {selectedFile && (
-                <div className="selected-file-info">
-                  <p><strong>Arquivo:</strong> {selectedFile.name}</p>
-                  <p><strong>Tamanho:</strong> {formatFileSize((selectedFile.size / 1024).toFixed(2))}</p>
+              {selectedFiles.length > 0 && (
+                <div className="selected-files-info">
+                  <div className="selected-files-header">
+                    <h3>Arquivos Selecionados ({selectedFiles.length})</h3>
+                    <button 
+                      onClick={clearSelectedFiles}
+                      className="clear-files-button"
+                      title="Limpar seleção"
+                    >
+                      <span className="clear-icon">✕</span> Limpar
+                    </button>
+                  </div>
                   
-                  {/* Mostra o agente selecionado se houver */}
-                  {selectedAgent && (
-                    <p><strong>Agente:</strong> {getSelectedAgentName()}</p>
-                  )}
+                  <div className="selected-files-list">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="selected-file-item">
+                        <span className="file-name">{file.name}</span>
+                        <span className="file-size">{formatFileSize((file.size / 1024).toFixed(2))}</span>
+                      </div>
+                    ))}
+                  </div>
                   
-                  {/* Mostra o número do processo se houver */}
-                  {processNumber && (
-                    <p><strong>Nº do processo:</strong> {processNumber}</p>
+                  <div className="selected-files-summary">
+                    <p><strong>Total de arquivos:</strong> {selectedFiles.length}</p>
+                    <p><strong>Tamanho total:</strong> {getTotalSelectedSize()}</p>
+                    
+                    {/* Mostra o agente selecionado se houver */}
+                    {selectedAgent && (
+                      <p><strong>Agente:</strong> {getSelectedAgentName()}</p>
+                    )}
+                    
+                    {/* Mostra o número do processo se houver */}
+                    {processNumber && (
+                      <p><strong>Nº do processo:</strong> {processNumber}</p>
+                    )}
+                  </div>
+                  
+                  {validationErrors.files && (
+                    <span className="error-message">{validationErrors.files}</span>
                   )}
                   
                   <button 
                     onClick={handleUpload}
                     className="upload-button"
-                    disabled={!selectedAgent || !processNumber}
+                    disabled={!selectedAgent || !processNumber || selectedFiles.length === 0 || isUploading}
                   >
-                    Confirmar Importação
+                    {isUploading ? 'Importando...' : `Importar ${selectedFiles.length} arquivo(s)`}
                   </button>
                 </div>
               )}
@@ -275,16 +352,28 @@ function Dashboard({ username, onLogout }) {
           <div className="list-section">
             <div className="list-header">
               <h2>Arquivos Importados</h2>
-              {pdfFiles.length > 0 && (
-                <button 
-                  onClick={handleDownloadAll}
-                  className="download-all-button"
-                  title="Baixar todos os arquivos"
-                >
-                  <span className="download-icon">📥</span>
-                  Baixar Todos
-                </button>
-              )}
+              <div className="list-actions">
+                {pdfFiles.length > 0 && (
+                  <>
+                    <button 
+                      onClick={handleDownloadAll}
+                      className="download-all-button"
+                      title="Baixar todos os arquivos"
+                    >
+                      <span className="download-icon">📥</span>
+                      Baixar Todos
+                    </button>
+                    <button 
+                      onClick={handleRemoveAllFiles}
+                      className="remove-all-button"
+                      title="Remover todos os arquivos"
+                    >
+                      <span className="remove-icon">🗑️</span>
+                      Remover Todos
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             
             {pdfFiles.length === 0 ? (
