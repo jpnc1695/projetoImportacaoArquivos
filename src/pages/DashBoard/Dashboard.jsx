@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import agentesData from '/src/Api/agentes.json' // Importa o JSON
 import './Dashboard.css'
-
 
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
@@ -27,10 +27,23 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 function Dashboard({ username, onLogout }) {
-  const [pdfFiles, setPdfFiles] = useLocalStorage('pdfiles',[])
+  const [pdfFiles, setPdfFiles] = useLocalStorage('pdfiles', [])
   const [selectedFile, setSelectedFile] = useState(null)
-  
+  const [selectedAgent, setSelectedAgent] = useState('')
+  const [agentes, setAgentes] = useState([]) // Estado para armazenar os agentes do JSON
+
   const navigate = useNavigate()
+
+  // Carrega os agentes do JSON quando o componente monta
+  useEffect(() => {
+    // Verifica se agentesData existe e tem a propriedade agentes
+    if (agentesData && agentesData.agentes) {
+      setAgentes(agentesData.agentes)
+      console.log('Agentes carregados:', agentesData.agentes) // Para debug
+    } else {
+      console.error('Formato do JSON inválido. Esperado: { agentes: [...] }')
+    }
+  }, []) // Array vazio = executa apenas uma vez
 
   const handleLogout = () => {
     onLogout()
@@ -56,11 +69,13 @@ function Dashboard({ username, onLogout }) {
         size: (selectedFile.size / 1024).toFixed(2),
         uploadDate: new Date().toLocaleDateString('pt-BR'),
         file: selectedFile,
-        url: fileUrl
+        url: fileUrl,
+        agente: selectedAgent || 'Não atribuído'
       }
       
       setPdfFiles([...pdfFiles, newFile])
       setSelectedFile(null)
+      setSelectedAgent('')
       document.getElementById('pdf-upload').value = ''
       alert('Arquivo importado com sucesso!')
     }
@@ -127,7 +142,7 @@ function Dashboard({ username, onLogout }) {
           </div>
 
           <div className="upload-section">
-            <h2>Importar PDF</h2>
+            <h2><strong>Importar PDF</strong></h2>
             <div className="upload-container">
               <input
                 type="file"
@@ -136,6 +151,31 @@ function Dashboard({ username, onLogout }) {
                 onChange={handleFileChange}
                 className="file-input"
               />
+              
+              {/* SELECT FORA DA CONDIÇÃO - SEMPRE VISÍVEL */}
+              <div className="agente-selector">
+                <label htmlFor="agente-select"><strong>Agente:</strong></label>
+                <select
+                  id="agente-select"
+                  value={selectedAgent}
+                  onChange={(e) => setSelectedAgent(e.target.value)}
+                  className="agente-dropdown"
+                >
+                  <option value="">Selecione um agente</option>
+                  {agentes.map(agente => (
+                    <option key={agente.id} value={agente.name}>
+                      {agente.name} ({agente.username})
+                    </option>
+                  ))}
+                </select>
+                
+                <button 
+                  onClick={() => navigate('/registrarAgente')}
+                  className="cadastrar-agente-button"
+                >
+                  Cadastrar Agente
+                </button>
+              </div>
               
               {selectedFile && (
                 <div className="selected-file-info">
@@ -177,6 +217,7 @@ function Dashboard({ username, onLogout }) {
                       <span className="pdf-name">{file.name}</span>
                       <span className="pdf-details">
                         {formatFileSize(file.size)} • {file.uploadDate}
+                        {file.agente && <span className="agente-tag"> • Agente: {file.agente}</span>}
                       </span>
                     </div>
                     <div className="pdf-actions">
@@ -192,7 +233,7 @@ function Dashboard({ username, onLogout }) {
                         className="remove-button"
                         title="Remover arquivo"
                       >
-                        ×
+                        <span className="remove-icon">🗑️</span>                    
                       </button>
                     </div>
                   </div>

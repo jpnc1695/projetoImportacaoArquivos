@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login/Login'
 import Dashboard from './pages/DashBoard/Dashboard'
 import CriarConta from './pages/CriarConta/CriarConta'
+import CadastrarAgente from './pages/CadastrarAgente/CadastrarAgente'
 import './App.css'
 
 function App() {
@@ -42,7 +43,15 @@ function App() {
           path="/registrar" 
           element={<CriarConta/>}        
         />
+
+        <Route 
+          path="/registrarAgente" 
+          element={<CadastrarAgente/>}        
+        />  
+        
       </Routes>
+
+      
     </BrowserRouter>
   )
 }

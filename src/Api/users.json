@@ -26,6 +26,15 @@
       "email": "teste123@email.com",
       "role": "user",
       "createdAt": "2026-02-24T18:53:58.606Z"
+    },
+    {
+      "id": 4,
+      "username": "joaop",
+      "password": "123456",
+      "name": "joao",
+      "email": "joa@email.com",
+      "role": "user",
+      "createdAt": "2026-02-25T14:27:03.561Z"
     }
   ]
 }

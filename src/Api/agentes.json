@@ -1,0 +1,20 @@
+{
+  "agentes": [
+    {
+      "id": 1,
+      "username": "joaoAgente",
+      "name": "joao ",
+      "email": "joaoAgente@email.com",
+      "role": "agente",
+      "createdAt": "2026-02-25T14:30:55.921Z"
+    },
+    {
+      "id": 2,
+      "username": "pedroAgente",
+      "name": "pedro agente",
+      "email": "pedroAgente@email.com",
+      "role": "agente",
+      "createdAt": "2026-02-25T16:15:36.296Z"
+    }
+  ]
+}

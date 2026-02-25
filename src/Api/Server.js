@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 const USERS_FILE = path.join(__dirname, 'users.json');
+const AGENTE_FILE = path.join(__dirname, 'agentes.json');
 
 // Função para ler usuários do arquivo
 const readUsers = () => {
@@ -19,10 +20,23 @@ const readUsers = () => {
   }
 };
 
+const readAgentes = () => {
+  try {
+    const data = fs.readFileSync(AGENTE_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return { agentes: [] };
+  }
+};
 // Função para escrever usuários no arquivo
 const writeUsers = (data) => {
   fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2), 'utf8');
 };
+
+const writeAgentes = (data) => {
+  fs.writeFileSync(AGENTE_FILE, JSON.stringify(data, null, 2), 'utf8');
+};
+
 
 // Endpoint de login
 app.post('/api/login', (req, res) => {
@@ -38,6 +52,13 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: 'Usuário ou senha inválidos' });
   }
 });
+
+// Endpoint para listar Agentes
+app.get('/api/agentes', (req, res) => {
+  const data = readAgentes();
+  res.json(data.agentes);
+});
+
 
 // Endpoint para listar usuários
 app.get('/api/users', (req, res) => {
@@ -97,6 +118,59 @@ app.post('/api/register', (req, res) => {
     success: true, 
     message: 'Usuário cadastrado com sucesso',
     user: userWithoutPassword 
+  });
+});
+
+
+// Endpoint para cadastrar novo Agente
+app.post('/api/registerAgente', (req, res) => {
+  const { username, name, email } = req.body;
+  
+  // Validações básicas
+  if (!username || !name || !email) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Todos os campos são obrigatórios' 
+    });
+  }
+
+  const data = readAgentes();
+  
+  // Verificar se agente já existe
+  const agenteExists = data.agentes.some(u => u.username === username);
+  if (agenteExists) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Nome de agente já existe' 
+    });
+  }
+
+  // Verificar se email já existe
+  const emailExists = data.agentes.some(u => u.email === email);
+  if (emailExists) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Email já cadastrado' 
+    });
+  }
+
+  // Criar novo Agente
+  const newAgente = {
+    id: data.agentes.length + 1,
+    username,
+    name,
+    email,
+    role: 'agente',
+    createdAt: new Date().toISOString()
+  };
+
+  data.agentes.push(newAgente);
+  writeAgentes(data);
+
+  res.json({ 
+    success: true, 
+    message: 'Agente cadastrado com sucesso',
+    agente: newAgente
   });
 });
 
