@@ -33,7 +33,7 @@ function Admin() {
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Nome' },
     { key: 'username', label: 'Usuário' },
-    { key: 'especialidade', label: 'Especialidade' }, // exemplo
+    {key: 'email', label: 'Email'},
     {
       key: 'createdAt',
       label: 'Criado em',
