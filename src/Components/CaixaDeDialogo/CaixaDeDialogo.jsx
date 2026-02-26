@@ -8,7 +8,7 @@ const CaixaDeDialogo = ({ isOpen, onClose, onConfirm, fileName }) => {
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
         <h3>Alterar Status</h3>
-        <p>Você deseja alterar o status do pedido?</p>
+        <p>Você deseja alterar o status do arquivo?</p>
         {fileName && <p className="file-name">Arquivo: {fileName}</p>}
         <div className="dialog-actions">
           <button 

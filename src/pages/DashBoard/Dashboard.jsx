@@ -52,9 +52,9 @@ const base64ToBlob = (base64) => {
 
 
 
-function Dashboard({ username, onLogout }) {
+function Dashboard({ username, userId, onLogout }) {
 
-
+console.log('Dashboard renderizado com userId:', userId)
   const [pdfFiles, setPdfFiles] = useState([])
   const [selectedFiles, setSelectedFiles] = useState([])
   const [selectedAgent, setSelectedAgent] = useState('')
@@ -72,13 +72,9 @@ function Dashboard({ username, onLogout }) {
       if (saved) {
         try {
           const filesData = JSON.parse(saved);
-          // Converter Base64 de volta para objetos utilizáveis
-          const files = filesData.map(data => ({
-            ...data,
-            // Não converter todos de uma vez para não travar a UI
-            // A conversão será feita sob demanda no download
-          }));
-          setPdfFiles(files);
+          // Filtra apenas os arquivos do usuário atual
+          const userFiles = filesData.filter(file => file.userId === userId);
+          setPdfFiles(userFiles);
         } catch (error) {
           console.error('Erro ao carregar arquivos:', error);
         }
@@ -86,7 +82,7 @@ function Dashboard({ username, onLogout }) {
     };
     
     loadSavedFiles();
-  }, []);
+  }, [userId]);
 
   // Carrega os agentes do JSON quando o componente monta
   useEffect(() => {
@@ -154,9 +150,11 @@ function Dashboard({ username, onLogout }) {
           base64Data,
           agente: selectedAgent,
           numeroProcesso: processNumber,
+          userId : userId,
           status: 'pendente' // opcional
         };
       })
+      
     );
 
     const updatedFiles = [...pdfFiles, ...newFiles];
@@ -179,6 +177,8 @@ function Dashboard({ username, onLogout }) {
     const input = document.getElementById('pdf-upload');
     if (input) input.value = '';
   }
+
+  console.log('userId no upload:', userId)
 };
 
 // 2. Corrigir o handleDownload
@@ -263,33 +263,33 @@ const handleDownloadAll = async (filesToDownload) => {
 
 const handleRemoveFile = (id) => {
   const fileToRemove = pdfFiles.find(file => file.id === id);
-  if (fileToRemove && fileToRemove.url) {
-    URL.revokeObjectURL(fileToRemove.url);
-  }
+ 
+
+  const updatedFiles = pdfFiles.filter(file => file.id !== id);
+  setPdfFiles(updatedFiles);
   
-  setPdfFiles(pdfFiles.filter(file => file.id !== id));
+  const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
+  const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
+  const newAllFiles = [...otherUsersFiles, ...updatedFiles];
+  localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
 };
 
 const handleRemoveAllFiles = (filesToRemove) => {
   const files = filesToRemove || pdfFiles;
   
   if (window.confirm(`Tem certeza que deseja remover todos os ${files.length} arquivo(s)?`)) {
-    files.forEach(file => {
-      if (file.url) {
-        URL.revokeObjectURL(file.url);
-      }
-    });
+    // Se filesToRemove foi passado (seleção filtrada), remove apenas esses
+    const remainingFiles = filesToRemove 
+      ? pdfFiles.filter(file => !filesToRemove.some(f => f.id === file.id))
+      : []; // se não, remove todos (pdfFiles vazio)
     
-    if (filesToRemove) {
-      // Se recebeu arquivos filtrados, remove apenas eles
-      const remainingFiles = pdfFiles.filter(
-        file => !filesToRemove.some(f => f.id === file.id)
-      );
-      setPdfFiles(remainingFiles);
-    } else {
-      // Se não, remove todos
-      setPdfFiles([]);
-    }
+    setPdfFiles(remainingFiles);
+
+    // Atualiza o localStorage: mantém outros usuários + remainingFiles
+    const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
+    const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
+    const newAllFiles = [...otherUsersFiles, ...remainingFiles];
+    localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
   }
 }
 
@@ -330,12 +330,16 @@ const handleRemoveAllFiles = (filesToRemove) => {
         <div className="dashboard-box">
           <div className="dashboard-header">
             <div className="header-with-logout">
-              <h1>Gerenciador de PDF</h1>
+              <h1>Gerenciador de Arquivos</h1>
 
               <div className="header-buttons">
-                
+
                   <button onClick={() => navigate('/registrar')} className="acount-button">
                     Criar Conta
+                  </button>
+
+                  <button onClick={() => navigate('/admin')} className="admin-button">
+                    Administração
                   </button>
 
                   <button onClick={handleLogout} className="logout-button">

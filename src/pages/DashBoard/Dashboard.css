@@ -99,6 +99,25 @@
   background-color: #c53030;
 }
 
+
+.admin-button {
+  background-color: #0f31c7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.admin-button:hover {
+  background-color: #3d55c2;
+}
+
+
 .acount-button {
   background-color: #44a337;
   color: white;

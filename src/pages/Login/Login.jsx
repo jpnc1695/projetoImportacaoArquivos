@@ -29,7 +29,7 @@ function Login({ onLogin }) {
     )
 
     if (user) {
-      onLogin(username)
+      onLogin({id: user.id , username : user.username})
       navigate('/dashboard')
     } else {
       setLoginError('Usuário ou senha inválidos')
