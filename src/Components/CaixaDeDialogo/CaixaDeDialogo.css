@@ -1,0 +1,84 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.dialog-content h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.dialog-content p {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.dialog-content .file-name {
+  font-weight: bold;
+  color: #333;
+  background: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.dialog-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dialog-button.approve {
+  background-color: #28a745;
+  color: white;
+}
+
+.dialog-button.approve:hover {
+  background-color: #218838;
+}
+
+.dialog-button.reject {
+  background-color: #dc3545;
+  color: white;
+}
+
+.dialog-button.reject:hover {
+  background-color: #c82333;
+}
+
+.dialog-button.cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.dialog-button.cancel:hover {
+  background-color: #5a6268;
+}

@@ -61,6 +61,43 @@
   animation: pulse 2s infinite;
 }
 
+/* Adicione ao FileList.css */
+.status-button-single {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 90px;
+  text-align: center;
+  margin-right: 8px;
+}
+
+.status-button-single.pendente {
+  background-color: #ffc107;
+  color: #856404;
+  border: 1px solid #856404;
+}
+
+.status-button-single.aprovado {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #155724;
+}
+
+.status-button-single.reprovado {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #721c24;
+}
+
+.status-button-single:hover {
+  filter: brightness(0.9);
+  transform: scale(1.02);
+}
+
 @keyframes pulse {
   0% {
     opacity: 1;
@@ -516,4 +553,6 @@
     font-size: 10px;
     padding: 2px 8px;
   }
+
+  
 }

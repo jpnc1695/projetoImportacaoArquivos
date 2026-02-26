@@ -328,6 +328,14 @@ const handleRemoveAllFiles = (filesToRemove) => {
     document.getElementById('pdf-upload').value = ''
   }
 
+  const handleStatusChange = (fileId, newStatus) => {
+    const updatedFiles = pdfFiles.map(file => 
+      file.id === fileId ? { ...file, status: newStatus } : file
+    );
+    setPdfFiles(updatedFiles);
+    localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-container">
@@ -467,6 +475,7 @@ const handleRemoveAllFiles = (filesToRemove) => {
             onDownloadAll={handleDownloadAll}
             onRemoveAll={handleRemoveAllFiles}
             formatFileSize={formatFileSize}
+            onStatusChange={handleStatusChange}
           />
 
         </div>
