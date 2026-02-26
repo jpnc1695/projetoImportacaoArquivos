@@ -20,9 +20,20 @@ const base64ToBlob = (base64) => {
     if (!base64 || typeof base64 !== 'string') {
       throw new Error('Base64 inválido');
     }
-    
+
+    let mimeType = 'application/octet-stream'; // padrão
+
     // Extrair a parte base64 (remover o prefixo data:application/pdf;base64, se existir)
-    const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+    let base64Data = base64;
+
+    if (base64.includes(',')) {
+      const parts = base64.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      if (mimeMatch) {
+        mimeType = mimeMatch[1];
+      }
+      base64Data = parts[1];
+    }
     
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
@@ -66,7 +77,6 @@ function Dashboard({ username, onLogout }) {
 
 
   const [pdfFiles, setPdfFiles] = useState([])
-  const [metadata, setMetadata] = useLocalStorage('pdfiles_metadata', []);
   const [selectedFiles, setSelectedFiles] = useState([])
   const [selectedAgent, setSelectedAgent] = useState('')
   const [processNumber, setProcessNumber] = useState('')
@@ -116,16 +126,9 @@ function Dashboard({ username, onLogout }) {
 
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files)
-    
-    const pdfFiles = files.filter(file => file.type === 'application/pdf')
-    const nonPdfFiles = files.filter(file => file.type !== 'application/pdf')
-    
-    if (nonPdfFiles.length > 0) {
-      alert(`${nonPdfFiles.length} arquivo(s) ignorado(s) por não serem PDF. Apenas arquivos PDF são permitidos.`)
-    }
-    
-    if (pdfFiles.length > 0) {
-      setSelectedFiles(pdfFiles)
+     
+    if (files.length > 0) {
+      setSelectedFiles(files)
       setValidationErrors({})
     } else {
       setSelectedFiles([])
@@ -147,7 +150,7 @@ function Dashboard({ username, onLogout }) {
     }
     
     if (selectedFiles.length === 0) {
-      errors.files = 'Selecione pelo menos um arquivo PDF'
+      errors.files = 'Selecione pelo menos um arquivo'
     }
     
     setValidationErrors(errors)
@@ -155,43 +158,49 @@ function Dashboard({ username, onLogout }) {
   }
 
   const handleUpload = async () => {
-    if (selectedFiles.length > 0) {
-      if (!validateFields()) return;
-      
-      setIsUploading(true);
-      
-      // Converter todos os arquivos para Base64
-      const newFiles = await Promise.all(selectedFiles.map(async (file) => {
+  if (selectedFiles.length === 0) return;
+  if (!validateFields()) return;
+
+  setIsUploading(true);
+
+  try {
+    const newFiles = await Promise.all(
+      selectedFiles.map(async (file) => {
         const base64Data = await fileToBase64(file);
-        
         return {
           id: Date.now() + Math.random(),
           name: file.name,
           size: (file.size / 1024).toFixed(2),
           uploadDate: new Date().toLocaleDateString('pt-BR'),
-          base64Data: base64Data, // Armazena o Base64
+          base64Data,
           agente: selectedAgent,
-          numeroProcesso: processNumber
+          numeroProcesso: processNumber,
+          status: 'pendente' // opcional
         };
-      }));
-      
-      const updatedFiles = [...pdfFiles, ...newFiles];
-      setPdfFiles(updatedFiles);
-      
-      // Salvar no localStorage (apenas metadados + base64)
-      localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
-      
-      // Limpar seleção
-      setSelectedFiles([]);
-      setSelectedAgent('');
-      setProcessNumber('');
-      setValidationErrors({});
-      setIsUploading(false);
-      
-      document.getElementById('pdf-upload').value = '';
-      alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`);
-    }
-  };
+      })
+    );
+
+    const updatedFiles = [...pdfFiles, ...newFiles];
+    setPdfFiles(updatedFiles);
+    localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
+
+    alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`);
+  } catch (error) {
+    console.error('Erro no upload:', error);
+    alert('Erro ao importar arquivos. Tente novamente.');
+  } finally {
+    // 🔥 Limpeza garantida mesmo em caso de erro
+    setSelectedFiles([]);
+    setSelectedAgent('');
+    setProcessNumber('');
+    setValidationErrors({});
+    setIsUploading(false);
+
+    // Reseta o input file
+    const input = document.getElementById('pdf-upload');
+    if (input) input.value = '';
+  }
+};
 
 // 2. Corrigir o handleDownload
 const handleDownload = (file) => {
@@ -351,12 +360,12 @@ const handleRemoveAllFiles = (filesToRemove) => {
           </div>
 
           <div className="upload-section">
-            <h2><strong>Importar PDFs</strong></h2>
+            <h2><strong>Importar Arquivo</strong></h2>
             <div className="upload-container">
               <input
                 type="file"
                 id="pdf-upload"
-                accept=".pdf"
+                accept="*/*"
                 onChange={handleFileChange}
                 className="file-input"
                 multiple
