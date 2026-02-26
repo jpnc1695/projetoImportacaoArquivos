@@ -4,6 +4,41 @@ import agentesData from '/src/Api/agentes.json'
 import FileList from '../../Components/FileList/FileList'
 import './Dashboard.css'
 
+// Mover as funções para o escopo global do módulo
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+};
+
+const base64ToBlob = (base64) => {
+  try {
+    // Verificar se base64 é válido
+    if (!base64 || typeof base64 !== 'string') {
+      throw new Error('Base64 inválido');
+    }
+    
+    // Extrair a parte base64 (remover o prefixo data:application/pdf;base64, se existir)
+    const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+    
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: 'application/pdf' });
+  } catch (error) {
+    console.error('Erro ao converter base64 para blob:', error);
+    throw error;
+  }
+};
+
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
     try {
@@ -28,7 +63,10 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 function Dashboard({ username, onLogout }) {
-  const [pdfFiles, setPdfFiles] = useLocalStorage('pdfiles', [])
+
+
+  const [pdfFiles, setPdfFiles] = useState([])
+  const [metadata, setMetadata] = useLocalStorage('pdfiles_metadata', []);
   const [selectedFiles, setSelectedFiles] = useState([])
   const [selectedAgent, setSelectedAgent] = useState('')
   const [processNumber, setProcessNumber] = useState('')
@@ -37,6 +75,29 @@ function Dashboard({ username, onLogout }) {
   const [isUploading, setIsUploading] = useState(false)
 
   const navigate = useNavigate()
+
+
+  useEffect(() => {
+    const loadSavedFiles = async () => {
+      const saved = localStorage.getItem('pdfiles_base64');
+      if (saved) {
+        try {
+          const filesData = JSON.parse(saved);
+          // Converter Base64 de volta para objetos utilizáveis
+          const files = filesData.map(data => ({
+            ...data,
+            // Não converter todos de uma vez para não travar a UI
+            // A conversão será feita sob demanda no download
+          }));
+          setPdfFiles(files);
+        } catch (error) {
+          console.error('Erro ao carregar arquivos:', error);
+        }
+      }
+    };
+    
+    loadSavedFiles();
+  }, []);
 
   // Carrega os agentes do JSON quando o componente monta
   useEffect(() => {
@@ -93,90 +154,156 @@ function Dashboard({ username, onLogout }) {
     return Object.keys(errors).length === 0
   }
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (selectedFiles.length > 0) {
-      if (!validateFields()) {
-        return
-      }
+      if (!validateFields()) return;
       
-      setIsUploading(true)
+      setIsUploading(true);
       
-      const newFiles = selectedFiles.map(file => {
-        const fileUrl = URL.createObjectURL(file)
+      // Converter todos os arquivos para Base64
+      const newFiles = await Promise.all(selectedFiles.map(async (file) => {
+        const base64Data = await fileToBase64(file);
+        
         return {
           id: Date.now() + Math.random(),
           name: file.name,
           size: (file.size / 1024).toFixed(2),
           uploadDate: new Date().toLocaleDateString('pt-BR'),
-          file: file,
-          url: fileUrl,
+          base64Data: base64Data, // Armazena o Base64
           agente: selectedAgent,
           numeroProcesso: processNumber
-        }
-      })
+        };
+      }));
       
-      setPdfFiles([...pdfFiles, ...newFiles])
+      const updatedFiles = [...pdfFiles, ...newFiles];
+      setPdfFiles(updatedFiles);
       
-      setSelectedFiles([])
-      setSelectedAgent('')
-      setProcessNumber('')
-      setValidationErrors({})
-      setIsUploading(false)
+      // Salvar no localStorage (apenas metadados + base64)
+      localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
       
-      document.getElementById('pdf-upload').value = ''
+      // Limpar seleção
+      setSelectedFiles([]);
+      setSelectedAgent('');
+      setProcessNumber('');
+      setValidationErrors({});
+      setIsUploading(false);
       
-      alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`)
+      document.getElementById('pdf-upload').value = '';
+      alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`);
     }
+  };
+
+// 2. Corrigir o handleDownload
+const handleDownload = (file) => {
+  try {
+    if (file.base64Data) {
+      // Converter Base64 para Blob
+      const blob = base64ToBlob(file.base64Data);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.href = url;
+      link.download = file.name;
+      link.click();
+      
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } else {
+      alert('Arquivo corrompido ou inválido');
+    }
+  } catch (error) {
+    console.error('Erro no download:', error);
+    alert('Erro ao baixar arquivo');
+  }
+};
+// Dashboard.js
+const handleDownloadAll = async (filesToDownload) => {
+  if (!filesToDownload || filesToDownload.length === 0) {
+    alert('Não há arquivos para download');
+    return;
   }
 
-  const handleDownload = (file) => {
-    const link = document.createElement('a')
-    link.href = file.url
-    link.download = file.name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  if (filesToDownload.length > 5) {
+    const confirm = window.confirm(
+      `Baixar ${filesToDownload.length} arquivos?\n\n` +
+      'Os arquivos serão baixados um por vez com intervalo de 500ms.'
+    );
+    if (!confirm) return;
   }
 
-  const handleDownloadAll = () => {
-    if (pdfFiles.length === 0) {
-      alert('Não há arquivos para download')
-      return
-    }
+  let successCount = 0;
+  let errorCount = 0;
 
-    pdfFiles.forEach((file, index) => {
-      setTimeout(() => {
-        const link = document.createElement('a')
-        link.href = file.url
-        link.download = file.name
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      }, index * 500)
-    })
-
-    alert(`Iniciando download de ${pdfFiles.length} arquivo(s)`)
-  }
-
-  const handleRemoveFile = (id) => {
-    const fileToRemove = pdfFiles.find(file => file.id === id)
-    if (fileToRemove && fileToRemove.url) {
-      URL.revokeObjectURL(fileToRemove.url)
-    }
+  for (let i = 0; i < filesToDownload.length; i++) {
+    const file = filesToDownload[i];
     
-    setPdfFiles(pdfFiles.filter(file => file.id !== id))
-  }
-
-  const handleRemoveAllFiles = () => {
-    if (window.confirm('Tem certeza que deseja remover todos os arquivos?')) {
-      pdfFiles.forEach(file => {
-        if (file.url) {
-          URL.revokeObjectURL(file.url)
-        }
-      })
-      setPdfFiles([])
+    try {
+      const fileObject = file.fileData;
+      
+      if (!fileObject) {
+        throw new Error('Dados do arquivo não encontrados');
+      }
+      
+      const url = URL.createObjectURL(fileObject);
+      const link = document.createElement('a');
+      
+      link.href = url;
+      link.download = file.name;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      successCount++;
+      
+      if (i < filesToDownload.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+    } catch (error) {
+      console.error(`Erro ao baixar ${file.name}:`, error);
+      errorCount++;
     }
   }
+
+  alert(`${successCount} arquivo(s) baixado(s) com sucesso${errorCount > 0 ? `, ${errorCount} falha(s)` : ''}`);
+};
+
+const handleRemoveFile = (id) => {
+  const fileToRemove = pdfFiles.find(file => file.id === id);
+  if (fileToRemove && fileToRemove.url) {
+    URL.revokeObjectURL(fileToRemove.url);
+  }
+  
+  setPdfFiles(pdfFiles.filter(file => file.id !== id));
+};
+
+const handleRemoveAllFiles = (filesToRemove) => {
+  const files = filesToRemove || pdfFiles;
+  
+  if (window.confirm(`Tem certeza que deseja remover todos os ${files.length} arquivo(s)?`)) {
+    files.forEach(file => {
+      if (file.url) {
+        URL.revokeObjectURL(file.url);
+      }
+    });
+    
+    if (filesToRemove) {
+      // Se recebeu arquivos filtrados, remove apenas eles
+      const remainingFiles = pdfFiles.filter(
+        file => !filesToRemove.some(f => f.id === file.id)
+      );
+      setPdfFiles(remainingFiles);
+    } else {
+      // Se não, remove todos
+      setPdfFiles([]);
+    }
+  }
+}
 
   const formatFileSize = (sizeInKB) => {
     if (sizeInKB < 1024) {

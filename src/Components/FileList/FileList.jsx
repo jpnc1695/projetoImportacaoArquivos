@@ -73,11 +73,13 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   };
 
   const handleDownloadAll = () => {
-    onDownloadAll();
+    onDownloadAll(filteredFiles);
   };
 
   const handleRemoveAll = () => {
-    onRemoveAll();
+    if (window.confirm(`Tem certeza que deseja remover todos os ${filteredFiles.length} arquivo(s) mostrados?`)) {
+      onRemoveAll(filteredFiles); // Passa apenas os arquivos filtrados
+    }
   };
 
   // Calcula o tamanho total dos arquivos filtrados
