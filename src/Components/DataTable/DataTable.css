@@ -1,0 +1,117 @@
+/* DataTable.css - Estilo alinhado com o dashboard */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+  min-width: 600px; /* Garante rolagem horizontal em telas pequenas */
+}
+
+.data-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.data-table th {
+  padding: 15px 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 13px;
+}
+
+.data-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #4a5568;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f7fafc;
+  transition: background-color 0.2s;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Estilo para células de ações */
+.data-table td.actions {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  margin: 0 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.actions button:hover {
+  background-color: #e2e8f0;
+}
+
+.edit-btn {
+  color: #3182ce;
+}
+
+.delete-btn {
+  color: #e53e3e;
+}
+
+/* Estados de loading/erro (caso queira usar dentro da tabela) */
+.table-loading,
+.table-error,
+.table-empty {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #4a5568;
+  margin-top: 20px;
+}
+
+.table-loading {
+  color: #667eea;
+}
+
+.table-error {
+  color: #c53030;
+  background-color: #fed7d7;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  .actions button {
+    font-size: 16px;
+    margin: 0 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .table-container {
+    margin-top: 15px;
+  }
+}

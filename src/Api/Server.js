@@ -69,10 +69,10 @@ app.get('/api/users', (req, res) => {
 
 // Endpoint para cadastrar novo usuário
 app.post('/api/register', (req, res) => {
-  const { username, password, name, email } = req.body;
+  const { username, password, name, email, origem } = req.body;
   
   // Validações básicas
-  if (!username || !password || !name || !email) {
+  if (!username || !password || !name || !email || !origem) {
     return res.status(400).json({ 
       success: false, 
       message: 'Todos os campos são obrigatórios' 
@@ -107,9 +107,12 @@ app.post('/api/register', (req, res) => {
     name,
     email,
     role: 'user',
+    origem,
     createdAt: new Date().toISOString()
   };
 
+
+  console.log(newUser)
   data.users.push(newUser);
   writeUsers(data);
 

@@ -11,7 +11,8 @@ function Register() {
     email: '',
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    origem: 'importacao'
   })
   
   const [showPassword, setShowPassword] = useState(false)
@@ -58,6 +59,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    console.log('Form data:', formData)
     if (!validateForm()) return
 
     setLoading(true)
@@ -74,7 +76,8 @@ function Register() {
           name: formData.name,
           email: formData.email,
           username: formData.username,
-          password: formData.password
+          password: formData.password,
+          origem: formData.origem
         })
       })
 
@@ -145,6 +148,21 @@ function Register() {
                 required
                 disabled={loading}
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="origem">Origem</label>
+              <select
+                id="origem"
+                name="origem"
+                value={formData.origem}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                className="origem-select"
+              >
+                <option value="importacao">Importação</option>
+                <option value="marketing">Marketing</option>
+              </select>
             </div>
 
             <div className="form-group">
