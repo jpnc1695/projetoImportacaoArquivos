@@ -50,28 +50,7 @@ const base64ToBlob = (base64) => {
   }
 };
 
-const useLocalStorage = (key, initialValue) => {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      return initialValue;
-    }
-  });
 
-  const setValue = (value) => {
-    try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  return [storedValue, setValue];
-};
 
 function Dashboard({ username, onLogout }) {
 
@@ -352,9 +331,19 @@ const handleRemoveAllFiles = (filesToRemove) => {
           <div className="dashboard-header">
             <div className="header-with-logout">
               <h1>Gerenciador de PDF</h1>
-              <button onClick={handleLogout} className="logout-button">
-                Sair
-              </button>
+
+              <div className="header-buttons">
+                
+                  <button onClick={() => navigate('/registrar')} className="acount-button">
+                    Criar Conta
+                  </button>
+
+                  <button onClick={handleLogout} className="logout-button">
+                    Sair
+                  </button>
+                  
+              </div>
+
             </div>
             <p>Bem-vindo, {username}!</p>
           </div>

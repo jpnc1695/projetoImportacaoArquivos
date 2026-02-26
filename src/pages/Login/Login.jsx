@@ -92,7 +92,6 @@ function Login({ onLogin }) {
             )}
 
             <Botao onClick={handleLogin} nome={"Entrar"} tipo={"submit"} />
-            <Botao onClick={() => navigate('/registrar')} nome={"Criar Conta"} tipo={"button"} />
               
             <div className="login-hint">
               <p><strong>Usuários de teste:</strong></p>
