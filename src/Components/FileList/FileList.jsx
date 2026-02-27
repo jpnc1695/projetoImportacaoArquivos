@@ -129,7 +129,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
         <div className="list-header">
           <h2>Arquivos Importados</h2>
         </div>
-        <p className="empty-message">Nenhum arquivo PDF importado</p>
+        <p className="empty-message">Nenhum arquivo importado</p>
       </div>
     );
   }
