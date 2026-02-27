@@ -1,9 +1,9 @@
 // FileList.js
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import CaixaDeDialogo from '../CaixaDeDialogo/CaixaDeDialogo';
 import './FileList.css';
 
-const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, formatFileSize, onStatusChange }) => {
+const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, formatFileSize, onStatusChange, onDownloadSelected  }) => {
   const [filters, setFilters] = useState({
     agente: '',
     processo: '',
@@ -14,6 +14,12 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   const [showFilters, setShowFilters] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [filters]);
 
   // Extrai valores únicos para os filtros - com tratamento de null/undefined
   const uniqueValues = useMemo(() => {
@@ -108,11 +114,6 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
       onRemoveAll(filteredFiles); // Passa apenas os arquivos filtrados
     }
   };
-  const handleStatusChange = (file, newStatus) => {
-    if (onStatusChange) {
-      onStatusChange(file.id, newStatus);
-    }
-  };
 
   // Função para obter o texto do status
   const getStatusText = (status) => {
@@ -148,6 +149,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
     <div className="list-section">
       <div className="list-header">
         <div className="header-title">
+
           <h2>Arquivos Importados</h2>
           <button 
             onClick={() => setShowFilters(!showFilters)}
@@ -160,6 +162,28 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
           </button>
         </div>
         <div className="list-actions">
+
+          <button
+            onClick={() => {
+              const selectedFiles = Array.from(selectedIds).map(id =>
+                pdfFiles.find(f => f.id === id)
+              );
+              // Se você tem uma prop específica para baixar múltiplos arquivos selecionados:
+              if (onDownloadSelected) {
+                onDownloadSelected(selectedFiles);
+              } else {
+                // Fallback: chama onDownload para cada arquivo (ou use onDownloadAll)
+                selectedFiles.forEach(file => onDownload(file));
+              }
+            }}
+            disabled={selectedIds.size === 0}
+            className="download-selected-button"
+            title="Baixar arquivos selecionados"
+          >
+            <span className="download-icon">📥</span>
+            Baixar Selecionados ({selectedIds.size})
+          </button>
+
           <button 
             onClick={handleDownloadAll}
             className="download-all-button"
@@ -169,6 +193,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
             <span className="download-icon">📥</span>
             Baixar Todos
           </button>
+
           <button 
             onClick={handleRemoveAll}
             className="remove-all-button"
@@ -280,6 +305,20 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
         ) : (
           filteredFiles.map((file) => (
             <div key={file.id} className="pdf-item">
+              <input
+                type="checkbox"
+                checked={selectedIds.has(file.id)}
+                onChange={(e) => {
+                  const newSelected = new Set(selectedIds);
+                  if (e.target.checked) {
+                    newSelected.add(file.id);
+                  } else {
+                    newSelected.delete(file.id);
+                  }
+                  setSelectedIds(newSelected);
+                }}
+              />              
+              
               <div className="pdf-info">
                 <span className="pdf-name">{file.name}</span>
                 <span className="pdf-details">
@@ -305,8 +344,6 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
               >
                 {getStatusText(file.status)}
               </button>
-
-          
 
                 <button 
                   onClick={() => handleDownloadFile(file)}

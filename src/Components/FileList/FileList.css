@@ -8,6 +8,59 @@
   margin-top: 20px;
 }
 
+
+/* Alinha o checkbox no cabeçalho */
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-title input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Alinha o checkbox em cada item da lista */
+.pdf-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdf-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0; /* Evita que o checkbox encolha */
+}
+
+/* Ajusta o espaçamento das informações do arquivo */
+.pdf-info {
+  flex: 1; /* Ocupa o espaço restante */
+  min-width: 0; /* Permite que o texto quebre */
+}
+
+/* Estilo para o novo botão de download selecionado (opcional) */
+.download-selected-button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.download-selected-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
 /* Cabeçalho da lista */
 .list-header {
   display: flex;
