@@ -25,6 +25,8 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
   const [selectedAgent, setSelectedAgent] = useState('');
   const [processNumber, setProcessNumber] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+  const [processType, setProcessType] = useState('Packing'); // valor padrão
+
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (event) => {
@@ -72,7 +74,8 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
             agente: selectedAgent,
             numeroProcesso: processNumber,
             userId: userId,
-            status: 'pendente'
+            status: 'pendente',
+            tipoArquivo: processType
           };
         })
       );
@@ -84,6 +87,7 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
       setSelectedAgent('');
       setProcessNumber('');
       setValidationErrors({});
+      setProcessType("packing");
 
       const input = document.getElementById('pdf-upload');
       if (input) input.value = '';
@@ -167,6 +171,20 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
           )}
         </div>
 
+  
+        <div className="processo-selector">
+          <label htmlFor="processo-number"><strong>Selecione o tipo do Arquivo</strong></label>
+          <select
+            id="processo-tipo"
+            value={processType}
+            onChange={(e) => setProcessType(e.target.value)}
+          >
+            <option value="packing">Packing</option>
+            <option value="sortimento">Sortimento</option>
+          </select>
+        </div>
+        
+
         {selectedFiles.length > 0 && (
           <div className="selected-files-info">
             <div className="selected-files-header">
@@ -197,6 +215,10 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
               )}
               {processNumber && (
                 <p><strong>Nº do processo:</strong> {processNumber}</p>
+              )}
+
+              {processType && (
+                <p><strong>Tipo de arquivo:</strong> {processType}</p>
               )}
             </div>
 

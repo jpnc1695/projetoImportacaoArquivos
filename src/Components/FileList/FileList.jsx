@@ -7,14 +7,13 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   const [filters, setFilters] = useState({
     agente: '',
     processo: '',
-    status: ''
+    status: '',
+    tipoArquivo: ''
   });
   
   const [showFilters, setShowFilters] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-
-
 
   // Extrai valores únicos para os filtros - com tratamento de null/undefined
   const uniqueValues = useMemo(() => {
@@ -30,7 +29,15 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
         .filter(processo => processo && processo !== 'Não informado')
     )].sort();
     
-    return { agentes, processos };
+
+    const tipoArquivo = [...new Set(
+      pdfFiles
+        .map(file => file.tipoArquivo)
+        .filter(tipoArquivo => tipoArquivo && tipoArquivo !== 'Não informado')
+    )].sort();
+
+
+    return { agentes, processos, tipoArquivo };
   }, [pdfFiles]);
 
   // Aplica os filtros aos arquivos - corrigido
@@ -45,8 +52,11 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
       // 👇 Adiciona filtro por status
       const matchStatus = !filters.status || 
         (file.status && file.status === filters.status);
+
+      const matchTipo = !filters.tipoArquivo || 
+        (file.tipoArquivo && file.tipoArquivo === filters.tipoArquivo.toLocaleLowerCase());
       
-      return matchAgente && matchProcesso && matchStatus;
+      return matchAgente && matchProcesso && matchStatus && matchTipo;
     });
   }, [pdfFiles, filters]);
 
@@ -121,7 +131,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   };
 
   // Verifica se há filtros ativos
-  const hasActiveFilters = filters.agente || filters.processo || filters.status;
+  const hasActiveFilters = filters.agente || filters.processo || filters.status || filters.tipoArquivo;
 
   if (pdfFiles.length === 0) {
     return (
@@ -211,6 +221,22 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
               </select>
             </div>
 
+            <div className="filter-group">
+        <label htmlFor="filter-tipoArquivo">Filtrar por tipo de arquivo:</label>
+        <select
+          id="filter-tipoArquivo"
+          name="tipoArquivo"
+          value={filters.tipoArquivo}
+          onChange={handleFilterChange}
+          className="filter-select"
+        >
+          <option value="">Todos os Arquivos</option>
+          {uniqueValues.tipoArquivo.map(tipo => (
+            <option key={tipo} value={tipo}>{tipo}</option>
+          ))}
+        </select>
+      </div>
+
              {/* Novo filtro por status */}
              <div className="filter-group">
               <label htmlFor="filter-status">Filtrar por Status:</label>
@@ -264,6 +290,10 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                   {file.numeroProcesso && file.numeroProcesso !== 'Não informado' && (
                     <span className="processo-tag"> • Processo: {file.numeroProcesso}</span>
                   )}
+
+                  {file.tipoArquivo && file.tipoArquivo !== 'Não informado' && (
+                    <span className="tipoArquivo-tag"> • Tipo de Arquivo: {file.tipoArquivo}</span>
+                  )}
                 </span>
               </div>
               <div className="pdf-actions">
@@ -276,13 +306,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                 {getStatusText(file.status)}
               </button>
 
-              <button
-                onClick={() => handleStatusClick(file)}
-                className={`status-button-single ${file.status || 'pendente'}`}
-                title="Clique para alterar o status"
-              >
-                {getStatusText(file.status)}
-              </button>
+          
 
                 <button 
                   onClick={() => handleDownloadFile(file)}

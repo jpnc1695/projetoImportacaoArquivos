@@ -10,14 +10,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-    /* Background com imagem */
-    background-image: url('/src/assets/Navio3.jpg'); /* Caminho para sua imagem */
-    background-size: cover; /* Cobre toda a área */
-    background-position: center; /* Centraliza a imagem */
-    background-repeat: no-repeat; /* Não repete */
-    background-attachment: fixed; /* Fixa o fundo ao rolar */
-    min-height: 100vh;
 }
 
 /* Garantir que não há margens ou paddings que possam atrapalhar */
