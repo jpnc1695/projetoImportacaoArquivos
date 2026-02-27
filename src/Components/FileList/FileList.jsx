@@ -72,9 +72,9 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   };
 
   // Callback chamado quando o usuário escolhe um status no diálogo
-  const handleDialogConfirm = (status) => {
+  const handleDialogConfirm = (status, reason) => {
     if (selectedFile && onStatusChange) {
-      onStatusChange(selectedFile.id, status);
+      onStatusChange(selectedFile.id, status, reason);
     }
     setDialogOpen(false);
     setSelectedFile(null);
@@ -332,6 +332,10 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
 
                   {file.tipoArquivo && file.tipoArquivo !== 'Não informado' && (
                     <span className="tipoArquivo-tag"> • Tipo de Arquivo: {file.tipoArquivo}</span>
+                  )}
+
+                {file.status === 'reprovado' && file.rejectionReason && (
+                    <span className="rejection-reason-tag"> • Motivo: {file.rejectionReason}</span>
                   )}
                 </span>
               </div>

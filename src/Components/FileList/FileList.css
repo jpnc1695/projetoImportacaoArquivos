@@ -413,6 +413,19 @@
   letter-spacing: 0.3px;
 }
 
+.rejection-reason-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #fbbf2420 0%, #f59e0b20 100%);
+  color: #d97706; /* amarelo queimado */
+  font-weight: 600;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  border: 1px solid #fbbf2440;
+  letter-spacing: 0.3px;
+}
+
 /* Ações do PDF */
 .pdf-actions {
   display: flex;

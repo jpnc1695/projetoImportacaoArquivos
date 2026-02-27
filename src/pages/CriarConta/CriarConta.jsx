@@ -162,6 +162,7 @@ function Register() {
               >
                 <option value="importacao">Importação</option>
                 <option value="marketing">Marketing</option>
+                <option value="agente">Agente</option>
               </select>
             </div>
 

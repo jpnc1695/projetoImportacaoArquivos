@@ -175,14 +175,16 @@ function Dashboard({ username, userId, onLogout }) {
     }
   };
 
-  const handleStatusChange = (fileId, newStatus) => {
-    const updatedFiles = pdfFiles.map(file =>
-      file.id === fileId ? { ...file, status: newStatus } : file
+  const handleStatusChange = (id, status, reason) => {
+    setPdfFiles(prev =>
+      prev.map(file =>
+        file.id === id
+          ? { ...file, status, rejectionReason: status === 'reprovado' ? reason : null }
+          : file
+      )
     );
-    setPdfFiles(updatedFiles);
-    localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
   };
-
+  
   return (
     <div className="dashboard-page">
       <div className="dashboard-container">
