@@ -31,6 +31,14 @@
       "email": "agenteChina@email.com",
       "role": "agente",
       "createdAt": "2026-02-26T11:59:57.081Z"
+    },
+    {
+      "id": 5,
+      "username": "maghi",
+      "name": "Cmd",
+      "email": "cmd@teste.com",
+      "role": "agente",
+      "createdAt": "2026-02-27T13:58:27.526Z"
     }
   ]
 }

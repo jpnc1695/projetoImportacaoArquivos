@@ -227,6 +227,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                 <option value="reprovado">Reprovado</option>
               </select>
             </div>
+            
 
             {hasActiveFilters && (
               <button onClick={clearFilters} className="clear-filters-button">
@@ -266,6 +267,14 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                 </span>
               </div>
               <div className="pdf-actions">
+
+              <button
+                onClick={() => handleStatusClick(file)}
+                className={`status-button-single ${file.status || 'pendente'}`}
+                title="Clique para alterar o status"
+              >
+                {getStatusText(file.status)}
+              </button>
 
               <button
                 onClick={() => handleStatusClick(file)}

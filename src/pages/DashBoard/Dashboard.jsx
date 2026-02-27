@@ -1,31 +1,19 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import agentesData from '/src/Api/agentes.json'
-import FileList from '../../Components/FileList/FileList'
-import './Dashboard.css'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import agentesData from '/src/Api/agentes.json';
+import FileList from '../../Components/FileList/FileList';
+import ImportarArquivos from '../../Components/ImportarArquivos/ImportarArquivos'; // ajuste o caminho
+import './Dashboard.css';
 
-// Mover as funções para o escopo global do módulo
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
-};
-
+// Funções auxiliares que ainda são necessárias (base64ToBlob)
 const base64ToBlob = (base64) => {
+  // (mesma implementação anterior)
   try {
-    // Verificar se base64 é válido
     if (!base64 || typeof base64 !== 'string') {
       throw new Error('Base64 inválido');
     }
-
-    let mimeType = 'application/octet-stream'; // padrão
-
-    // Extrair a parte base64 (remover o prefixo data:application/pdf;base64, se existir)
+    let mimeType = 'application/octet-stream';
     let base64Data = base64;
-
     if (base64.includes(',')) {
       const parts = base64.split(',');
       const mimeMatch = parts[0].match(/:(.*?);/);
@@ -34,14 +22,11 @@ const base64ToBlob = (base64) => {
       }
       base64Data = parts[1];
     }
-    
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
-    
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
-    
     const byteArray = new Uint8Array(byteNumbers);
     return new Blob([byteArray], { type: 'application/pdf' });
   } catch (error) {
@@ -50,29 +35,19 @@ const base64ToBlob = (base64) => {
   }
 };
 
-
-
 function Dashboard({ username, userId, onLogout }) {
+  console.log('Dashboard renderizado com userId:', userId);
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const [agentes, setAgentes] = useState([]);
+  const navigate = useNavigate();
 
-console.log('Dashboard renderizado com userId:', userId)
-  const [pdfFiles, setPdfFiles] = useState([])
-  const [selectedFiles, setSelectedFiles] = useState([])
-  const [selectedAgent, setSelectedAgent] = useState('')
-  const [processNumber, setProcessNumber] = useState('')
-  const [agentes, setAgentes] = useState([])
-  const [validationErrors, setValidationErrors] = useState({})
-  const [isUploading, setIsUploading] = useState(false)
-
-  const navigate = useNavigate()
-
-
+  // Carrega os arquivos salvos no localStorage
   useEffect(() => {
     const loadSavedFiles = async () => {
       const saved = localStorage.getItem('pdfiles_base64');
       if (saved) {
         try {
           const filesData = JSON.parse(saved);
-          // Filtra apenas os arquivos do usuário atual
           const userFiles = filesData.filter(file => file.userId === userId);
           setPdfFiles(userFiles);
         } catch (error) {
@@ -80,244 +55,128 @@ console.log('Dashboard renderizado com userId:', userId)
         }
       }
     };
-    
     loadSavedFiles();
   }, [userId]);
 
-  // Carrega os agentes do JSON quando o componente monta
+  // Carrega os agentes do JSON
   useEffect(() => {
     if (agentesData && agentesData.agentes) {
-      setAgentes(agentesData.agentes)
-      console.log('Agentes carregados:', agentesData.agentes)
+      setAgentes(agentesData.agentes);
     } else {
-      console.error('Formato do JSON inválido. Esperado: { agentes: [...] }')
+      console.error('Formato do JSON inválido. Esperado: { agentes: [...] }');
     }
-  }, [])
+  }, []);
 
   const handleLogout = () => {
-    onLogout()
-    navigate('/')
-  }
+    onLogout();
+    navigate('/');
+  };
 
-  const handleFileChange = (event) => {
-    const files = Array.from(event.target.files)
-     
-    if (files.length > 0) {
-      setSelectedFiles(files)
-      setValidationErrors({})
-    } else {
-      setSelectedFiles([])
-      event.target.value = null
-    }
-  }
-
-  const validateFields = () => {
-    const errors = {}
-    
-    if (!selectedAgent) {
-      errors.agent = 'Selecione um agente'
-    }
-    
-    if (!processNumber || processNumber.trim() === '') {
-      errors.process = 'O número do processo é obrigatório'
-    } else if (processNumber.trim().length < 5) {
-      errors.process = 'O número do processo deve ter pelo menos 5 caracteres'
-    }
-    
-    if (selectedFiles.length === 0) {
-      errors.files = 'Selecione pelo menos um arquivo'
-    }
-    
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleUpload = async () => {
-  if (selectedFiles.length === 0) return;
-  if (!validateFields()) return;
-
-  setIsUploading(true);
-
-  try {
-    const newFiles = await Promise.all(
-      selectedFiles.map(async (file) => {
-        const base64Data = await fileToBase64(file);
-        return {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: (file.size / 1024).toFixed(2),
-          uploadDate: new Date().toLocaleDateString('pt-BR'),
-          base64Data,
-          agente: selectedAgent,
-          numeroProcesso: processNumber,
-          userId : userId,
-          status: 'pendente' // opcional
-        };
-      })
-      
-    );
-
+  // Callback chamado quando o upload é concluído
+  const handleUploadComplete = (newFiles) => {
     const updatedFiles = [...pdfFiles, ...newFiles];
     setPdfFiles(updatedFiles);
     localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
+  };
 
-    alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`);
-  } catch (error) {
-    console.error('Erro no upload:', error);
-    alert('Erro ao importar arquivos. Tente novamente.');
-  } finally {
-    // 🔥 Limpeza garantida mesmo em caso de erro
-    setSelectedFiles([]);
-    setSelectedAgent('');
-    setProcessNumber('');
-    setValidationErrors({});
-    setIsUploading(false);
-
-    // Reseta o input file
-    const input = document.getElementById('pdf-upload');
-    if (input) input.value = '';
-  }
-
-  console.log('userId no upload:', userId)
-};
-
-// 2. Corrigir o handleDownload
-const handleDownload = (file) => {
-  try {
-    if (file.base64Data) {
-      // Converter Base64 para Blob
-      const blob = base64ToBlob(file.base64Data);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      
-      link.href = url;
-      link.download = file.name;
-      link.click();
-      
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } else {
-      alert('Arquivo corrompido ou inválido');
-    }
-  } catch (error) {
-    console.error('Erro no download:', error);
-    alert('Erro ao baixar arquivo');
-  }
-};
-// Dashboard.js
-const handleDownloadAll = async (filesToDownload) => {
-  if (!filesToDownload || filesToDownload.length === 0) {
-    alert('Não há arquivos para download');
-    return;
-  }
-
-  if (filesToDownload.length > 5) {
-    const confirm = window.confirm(
-      `Baixar ${filesToDownload.length} arquivos?\n\n` +
-      'Os arquivos serão baixados um por vez com intervalo de 500ms.'
-    );
-    if (!confirm) return;
-  }
-
-  let successCount = 0;
-  let errorCount = 0;
-
-  for (let i = 0; i < filesToDownload.length; i++) {
-    const file = filesToDownload[i];
-    
+  // Funções de download e remoção (inalteradas)
+  const handleDownload = (file) => {
     try {
-      const fileObject = file.fileData;
-      
-      if (!fileObject) {
-        throw new Error('Dados do arquivo não encontrados');
+      if (file.base64Data) {
+        const blob = base64ToBlob(file.base64Data);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } else {
+        alert('Arquivo corrompido ou inválido');
       }
-      
-      const url = URL.createObjectURL(fileObject);
-      const link = document.createElement('a');
-      
-      link.href = url;
-      link.download = file.name;
-      link.style.display = 'none';
-      
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      successCount++;
-      
-      if (i < filesToDownload.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
     } catch (error) {
-      console.error(`Erro ao baixar ${file.name}:`, error);
-      errorCount++;
+      console.error('Erro no download:', error);
+      alert('Erro ao baixar arquivo');
     }
-  }
+  };
 
-  alert(`${successCount} arquivo(s) baixado(s) com sucesso${errorCount > 0 ? `, ${errorCount} falha(s)` : ''}`);
-};
+  const handleDownloadAll = async (filesToDownload) => {
+    // (mesma implementação anterior)
+    if (!filesToDownload || filesToDownload.length === 0) {
+      alert('Não há arquivos para download');
+      return;
+    }
+    if (filesToDownload.length > 5) {
+      const confirm = window.confirm(
+        `Baixar ${filesToDownload.length} arquivos?\n\n` +
+        'Os arquivos serão baixados um por vez com intervalo de 500ms.'
+      );
+      if (!confirm) return;
+    }
+    let successCount = 0;
+    let errorCount = 0;
+    for (let i = 0; i < filesToDownload.length; i++) {
+      const file = filesToDownload[i];
+      try {
+        const fileObject = file.fileData;
+        if (!fileObject) {
+          throw new Error('Dados do arquivo não encontrados');
+        }
+        const url = URL.createObjectURL(fileObject);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+        successCount++;
+        if (i < filesToDownload.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`Erro ao baixar ${file.name}:`, error);
+        errorCount++;
+      }
+    }
+    alert(`${successCount} arquivo(s) baixado(s) com sucesso${errorCount > 0 ? `, ${errorCount} falha(s)` : ''}`);
+  };
 
-const handleRemoveFile = (id) => {
-  const fileToRemove = pdfFiles.find(file => file.id === id);
- 
-
-  const updatedFiles = pdfFiles.filter(file => file.id !== id);
-  setPdfFiles(updatedFiles);
-  
-  const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
-  const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
-  const newAllFiles = [...otherUsersFiles, ...updatedFiles];
-  localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
-};
-
-const handleRemoveAllFiles = (filesToRemove) => {
-  const files = filesToRemove || pdfFiles;
-  
-  if (window.confirm(`Tem certeza que deseja remover todos os ${files.length} arquivo(s)?`)) {
-    // Se filesToRemove foi passado (seleção filtrada), remove apenas esses
-    const remainingFiles = filesToRemove 
-      ? pdfFiles.filter(file => !filesToRemove.some(f => f.id === file.id))
-      : []; // se não, remove todos (pdfFiles vazio)
-    
-    setPdfFiles(remainingFiles);
-
-    // Atualiza o localStorage: mantém outros usuários + remainingFiles
+  const handleRemoveFile = (id) => {
+    const updatedFiles = pdfFiles.filter(file => file.id !== id);
+    setPdfFiles(updatedFiles);
     const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
     const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
-    const newAllFiles = [...otherUsersFiles, ...remainingFiles];
+    const newAllFiles = [...otherUsersFiles, ...updatedFiles];
     localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
-  }
-}
+  };
+
+  const handleRemoveAllFiles = (filesToRemove) => {
+    const files = filesToRemove || pdfFiles;
+    if (window.confirm(`Tem certeza que deseja remover todos os ${files.length} arquivo(s)?`)) {
+      const remainingFiles = filesToRemove
+        ? pdfFiles.filter(file => !filesToRemove.some(f => f.id === file.id))
+        : [];
+      setPdfFiles(remainingFiles);
+      const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
+      const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
+      const newAllFiles = [...otherUsersFiles, ...remainingFiles];
+      localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
+    }
+  };
 
   const formatFileSize = (sizeInKB) => {
     if (sizeInKB < 1024) {
-      return `${sizeInKB} KB`
+      return `${sizeInKB} KB`;
     } else {
-      return `${(sizeInKB / 1024).toFixed(2)} MB`
+      return `${(sizeInKB / 1024).toFixed(2)} MB`;
     }
-  }
-
-  const getSelectedAgentName = () => {
-    const agent = agentes.find(a => a.name === selectedAgent)
-    return agent ? `${agent.name} (${agent.username})` : selectedAgent
-  }
-
-  const getTotalSelectedSize = () => {
-    const totalKB = selectedFiles.reduce((total, file) => total + (file.size / 1024), 0)
-    return formatFileSize(totalKB.toFixed(2))
-  }
-
-  const clearSelectedFiles = () => {
-    setSelectedFiles([])
-    document.getElementById('pdf-upload').value = ''
-  }
+  };
 
   const handleStatusChange = (fileId, newStatus) => {
-    const updatedFiles = pdfFiles.map(file => 
+    const updatedFiles = pdfFiles.map(file =>
       file.id === fileId ? { ...file, status: newStatus } : file
     );
     setPdfFiles(updatedFiles);
@@ -331,146 +190,30 @@ const handleRemoveAllFiles = (filesToRemove) => {
           <div className="dashboard-header">
             <div className="header-with-logout">
               <h1>Gerenciador de Arquivos</h1>
-
               <div className="header-buttons">
-
-                  <button onClick={() => navigate('/registrar')} className="acount-button">
-                    Criar Conta
-                  </button>
-
-                  <button onClick={() => navigate('/admin')} className="admin-button">
-                    Administração
-                  </button>
-
-                  <button onClick={handleLogout} className="logout-button">
-                    Sair
-                  </button>
-                  
+                <button onClick={() => navigate('/registrar')} className="acount-button">
+                  Criar Conta
+                </button>
+                <button onClick={() => navigate('/admin')} className="admin-button">
+                  Administração
+                </button>
+                <button onClick={handleLogout} className="logout-button">
+                  Sair
+                </button>
               </div>
-
             </div>
             <p>Bem-vindo, {username}!</p>
           </div>
 
-          <div className="upload-section">
-            <h2><strong>Importar Arquivo</strong></h2>
-            <div className="upload-container">
-              <input
-                type="file"
-                id="pdf-upload"
-                accept="*/*"
-                onChange={handleFileChange}
-                className="file-input"
-                multiple
-              />
-              
-              <div className="agente-selector">
-                <label htmlFor="agente-select"><strong>Agente:</strong></label>
-                <select
-                  id="agente-select"
-                  value={selectedAgent}
-                  onChange={(e) => {
-                    setSelectedAgent(e.target.value)
-                    if (validationErrors.agent) {
-                      setValidationErrors({...validationErrors, agent: null})
-                    }
-                  }}
-                  className={`agente-dropdown ${validationErrors.agent ? 'error' : ''}`}
-                >
-                  <option value="">Selecione um agente</option>
-                  {agentes.map(agente => (
-                    <option key={agente.id} value={agente.name}>
-                      {agente.name} ({agente.username})
-                    </option>
-                  ))}
-                </select>
-                
-                {validationErrors.agent && (
-                  <span className="error-message">{validationErrors.agent}</span>
-                )}
-
-                <button 
-                  onClick={() => navigate('/registrarAgente')}
-                  className="cadastrar-agente-button"
-                >
-                  Cadastrar Agente
-                </button>
-              </div>
-
-              <div className="processo-selector">
-                <label htmlFor="processo-number"><strong>Nº do processo:</strong></label>
-                <input
-                  type="text"
-                  id="processo-number"
-                  value={processNumber}
-                  onChange={(e) => {
-                    setProcessNumber(e.target.value)
-                    if (validationErrors.process) {
-                      setValidationErrors({...validationErrors, process: null})
-                    }
-                  }}
-                  placeholder="Digite o número do processo"
-                  className={`processo-input ${validationErrors.process ? 'error' : ''}`}
-                />
-                
-                {validationErrors.process && (
-                  <span className="error-message">{validationErrors.process}</span>
-                )}
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div className="selected-files-info">
-                  <div className="selected-files-header">
-                    <h3>Arquivos Selecionados ({selectedFiles.length})</h3>
-                    <button 
-                      onClick={clearSelectedFiles}
-                      className="clear-files-button"
-                      title="Limpar seleção"
-                    >
-                      <span className="clear-icon">✕</span> Limpar
-                    </button>
-                  </div>
-                  
-                  <div className="selected-files-list">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="selected-file-item">
-                        <span className="file-name">{file.name}</span>
-                        <span className="file-size">{formatFileSize((file.size / 1024).toFixed(2))}</span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="selected-files-summary">
-                    <p><strong>Total de arquivos:</strong> {selectedFiles.length}</p>
-                    <p><strong>Tamanho total:</strong> {getTotalSelectedSize()}</p>
-                    
-                    {selectedAgent && (
-                      <p><strong>Agente:</strong> {getSelectedAgentName()}</p>
-                    )}
-                    
-                    {processNumber && (
-                      <p><strong>Nº do processo:</strong> {processNumber}</p>
-                    )}
-                  </div>
-                  
-                  {validationErrors.files && (
-                    <span className="error-message">{validationErrors.files}</span>
-                  )}
-                  
-                  <button 
-                    onClick={handleUpload}
-                    className="upload-button"
-                    disabled={!selectedAgent || !processNumber || selectedFiles.length === 0 || isUploading}
-                  >
-                    {isUploading ? 'Importando...' : `Importar ${selectedFiles.length} arquivo(s)`}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Componente de upload extraído */}
+          <ImportarArquivos
+            agentes={agentes}
+            userId={userId}
+            onUploadComplete={handleUploadComplete}
+          />
 
           {/* Componente FileList */}
-          <FileList 
+          <FileList
             pdfFiles={pdfFiles}
             onDownload={handleDownload}
             onRemove={handleRemoveFile}
@@ -479,11 +222,10 @@ const handleRemoveAllFiles = (filesToRemove) => {
             formatFileSize={formatFileSize}
             onStatusChange={handleStatusChange}
           />
-
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
