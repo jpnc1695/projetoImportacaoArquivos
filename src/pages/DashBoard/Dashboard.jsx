@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import JSZip from 'jszip';
 import agentesData from '/src/Api/agentes.json';
 import FileList from '../../Components/FileList/FileList';
 import ImportarArquivos from '../../Components/ImportarArquivos/ImportarArquivos'; // ajuste o caminho
@@ -95,6 +96,7 @@ function Dashboard({ username, userId, onLogout }) {
       }
     } catch (error) {
       console.error('Erro no download:', error);
+
       alert('Erro ao baixar arquivo');
     }
   };
@@ -107,41 +109,37 @@ function Dashboard({ username, userId, onLogout }) {
     }
     if (filesToDownload.length > 5) {
       const confirm = window.confirm(
-        `Baixar ${filesToDownload.length} arquivos?\n\n` +
-        'Os arquivos serão baixados um por vez com intervalo de 500ms.'
+        `Baixar ${filesToDownload.length} arquivos?\n\n`
+        
       );
       if (!confirm) return;
     }
-    let successCount = 0;
-    let errorCount = 0;
-    for (let i = 0; i < filesToDownload.length; i++) {
-      const file = filesToDownload[i];
-      try {
-        const fileObject = file.fileData;
-        if (!fileObject) {
-          throw new Error('Dados do arquivo não encontrados');
-        }
-        const url = URL.createObjectURL(fileObject);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }, 100);
-        successCount++;
-        if (i < filesToDownload.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      } catch (error) {
-        console.error(`Erro ao baixar ${file.name}:`, error);
-        errorCount++;
+   
+    try {
+      const zip = new JSZip();
+
+      for (const file of filesToDownload) {
+        const blob = base64ToBlob(file.base64Data);
+        const arrayBuffer = await blob.arrayBuffer();
+        zip.file(file.name, arrayBuffer);
       }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `arquivos_${Date.now()}.zip`; // nome do arquivo ZIP
+      link.click();
+
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      alert(`${filesToDownload.length} arquivo(s) baixado(s) com sucesso`);
+
+    } catch (error) {
+      console.error(`Erro ao baixar ${file.name}:`, error);
+      errorCount++;
     }
-    alert(`${successCount} arquivo(s) baixado(s) com sucesso${errorCount > 0 ? `, ${errorCount} falha(s)` : ''}`);
+   
+
   };
 
   const handleRemoveFile = (id) => {
