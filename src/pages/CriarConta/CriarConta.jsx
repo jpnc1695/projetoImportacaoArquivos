@@ -56,6 +56,10 @@ function Register() {
     return true
   }
 
+  const VoltarPagina = () => {
+    navigate('/')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -66,7 +70,7 @@ function Register() {
     setError('')
     setSuccess('')
 
-    try {
+    try { 
       const response = await fetch('http://localhost:3001/api/register', {
         method: 'POST',
         headers: {
@@ -236,6 +240,8 @@ function Register() {
 
 
             <Botao nome={"Cadastrar"} tipo={"submit"} onClick={handleSubmit}/>
+            <Botao nome={"Voltar"} tipo={"submit"} onClick={VoltarPagina}/>
+
 
             <div className="login-link">
               <p>

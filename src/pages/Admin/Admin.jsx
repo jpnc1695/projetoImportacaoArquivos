@@ -1,6 +1,9 @@
 // pages/Admin/Admin.jsx
 import { useEffect, useState } from 'react';
 import DataTable from '../../Components/DataTable/DataTable';
+import Botao from '../../Components/Button/Button.jsx';
+import { useNavigate } from 'react-router-dom'
+
 import './Admin.css';
 
 function Admin() {
@@ -9,6 +12,9 @@ function Admin() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState({ users: false, agents: false });
   const [error, setError] = useState({ users: '', agents: '' });
+
+  const navigate = useNavigate()
+
 
   // Definição das colunas para usuários
   const userColumns = [
@@ -41,6 +47,10 @@ function Admin() {
     },
   ];
 
+
+  const VoltarPagina = () => {
+    navigate('/')
+  }
   // Ações comuns
   const actions = (type) => [
     {
@@ -118,7 +128,7 @@ function Admin() {
       alert('Erro: ' + err.message);
     }
   };
-
+  
   return (
     <div className="admin-page">
       <div className="admin-container">
@@ -136,6 +146,8 @@ function Admin() {
           >
             Agentes
           </button>
+          <Botao className="adminBotao" nome={"Voltar"} tipo={"submit"} onClick={VoltarPagina}/>
+
         </div>
 
         {/* Conteúdo da aba */}
@@ -167,7 +179,11 @@ function Admin() {
               )}
             </>
           )}
+
+
         </div>
+
+
       </div>
     </div>
   );
