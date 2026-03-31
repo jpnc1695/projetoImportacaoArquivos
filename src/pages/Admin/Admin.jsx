@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom'
 import './Admin.css';
 
 function Admin() {
+
+  
   const [activeTab, setActiveTab] = useState('users'); // 'users' ou 'agents'
   const [users, setUsers] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -25,7 +27,14 @@ function Admin() {
     {
       key: 'origem',
       label: 'Origem',
-      render: (user) => (user.origem === 'importacao' ? 'Importação' : 'Marketing'),
+      render: (user) => {
+        const origemMap = {
+          importacao: 'Importação',
+          marketing: 'Marketing',
+          agente: 'Agente',
+        };
+        return origemMap[user.origem] || user.origem; // fallback para o valor original
+      },
     },
     {
       key: 'createdAt',
@@ -146,7 +155,14 @@ function Admin() {
           >
             Agentes
           </button>
-          <Botao className="adminBotao" nome={"Voltar"} tipo={"submit"} onClick={VoltarPagina}/>
+
+          <button
+            className={`tab ${activeTab === 'agents' ? 'active' : ''}`}
+            onClick={VoltarPagina}
+            tipo={"submit"}
+          >
+            Voltar
+          </button>
 
         </div>
 

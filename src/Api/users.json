@@ -1,115 +1,36 @@
 {
-  "users": [
-    {
-      "id": 1,
-      "username": "jpn",
-      "password": "123456",
-      "name": "joao",
-      "email": "teste@teste.com",
-      "role": "user",
-      "origem": "importacao",
-      "createdAt": "2026-02-24T18:21:37.597Z"
-    },
+  "agentes": [
     {
       "id": 2,
-      "username": "tiquinho",
-      "password": "123456",
-      "name": "Tiquinho soares",
-      "email": "teste2@teste.com",
-      "role": "user",
-      "createdAt": "2026-02-24T18:24:05.645Z"
+      "username": "pedroAgente",
+      "name": "pedro agente",
+      "email": "pedroAgente@email.com",
+      "role": "agente",
+      "createdAt": "2026-02-25T16:15:36.296Z"
     },
     {
       "id": 3,
-      "username": "jp123",
-      "password": "123456",
-      "name": "joao",
-      "email": "teste123@email.com",
-      "role": "user",
-      "createdAt": "2026-02-24T18:53:58.606Z"
+      "username": "pauloAgente",
+      "name": "paulo",
+      "email": "paulo@agente.com",
+      "role": "agente",
+      "createdAt": "2026-02-25T19:06:11.698Z"
     },
     {
       "id": 4,
-      "username": "joaop",
-      "password": "123456",
-      "name": "joao",
-      "email": "joa@email.com",
-      "role": "user",
-      "createdAt": "2026-02-25T14:27:03.561Z"
+      "username": "agenteChina",
+      "name": "Agente China",
+      "email": "agenteChina@email.com",
+      "role": "agente",
+      "createdAt": "2026-02-26T11:59:57.081Z"
     },
     {
       "id": 5,
-      "username": "joao.costa",
-      "password": "123456",
-      "name": "joao paulo nunes costa",
-      "email": "joaopaulo@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:12:30.536Z"
-    },
-    {
-      "id": 6,
-      "username": "carla.almeida",
-      "password": "123456",
-      "name": "carla almeida",
-      "email": "carla@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:27:39.131Z"
-    },
-    {
-      "id": 7,
-      "username": "fernanda.silva",
-      "password": "123456",
-      "name": "fernanda silva",
-      "email": "fernandasilva@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:33:07.642Z"
-    },
-    {
-      "id": 8,
-      "username": "joao.silva",
-      "password": "123456",
-      "name": "joao silva",
-      "email": "joaosilva@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:35:54.001Z"
-    },
-    {
-      "id": 9,
-      "username": "maria.silva",
-      "password": "123456",
-      "name": "maria silva",
-      "email": "maria@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:36:39.695Z"
-    },
-    {
-      "id": 10,
-      "username": "maria.almeida",
-      "password": "123456",
-      "name": "maria almeida",
-      "email": "mari2@email.com",
-      "role": "user",
-      "createdAt": "2026-02-26T16:40:49.228Z"
-    },
-    {
-      "id": 11,
-      "username": "andre.castro",
-      "password": "123456",
-      "name": "Andre castro",
-      "email": "andre.castro@email.com",
-      "role": "user",
-      "origem": "importacao",
-      "createdAt": "2026-02-26T17:57:45.912Z"
-    },
-    {
-      "id": 12,
-      "username": "gustavo.ferreira",
-      "password": "123456",
-      "name": "gustaco ferreira",
-      "email": "gustavo@email.com",
-      "role": "user",
-      "origem": "marketing",
-      "createdAt": "2026-02-26T17:58:41.883Z"
+      "username": "maghi",
+      "name": "Cmd",
+      "email": "cmd@teste.com",
+      "role": "agente",
+      "createdAt": "2026-02-27T13:58:27.526Z"
     }
   ]
 }

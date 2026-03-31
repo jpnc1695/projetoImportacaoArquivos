@@ -125,6 +125,44 @@ app.post('/api/register', (req, res) => {
 });
 
 
+app.delete('/api/agentes/:id', (req, res) => {
+  const agenteId = parseInt(req.params.id);
+  if (isNaN(agenteId)) {
+    return res.status(400).json({ success: false, message: 'ID inválido' });
+  }
+
+  const data = readAgentes();
+  const agenteExists = data.agentes.some(agente => agente.id === agenteId);
+
+  if (!agenteExists) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+  }
+
+  data.agentes = data.agentes.filter(agente => agente.id !== agenteId);
+  writeUsers(data);
+
+  res.json({ success: true, message: 'Usuário excluído com sucesso' });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+  const userId = parseInt(req.params.id);
+  if (isNaN(userId)) {
+    return res.status(400).json({ success: false, message: 'ID inválido' });
+  }
+
+  const data = readUsers();
+  const userExists = data.users.some(user => user.id === userId);
+
+  if (!userExists) {
+    return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+  }
+
+  data.users = data.users.filter(user => user.id !== userId);
+  writeUsers(data);
+
+  res.json({ success: true, message: 'Usuário excluído com sucesso' });
+});
+
 // Endpoint para cadastrar novo Agente
 app.post('/api/registerAgente', (req, res) => {
   const { username, name, email } = req.body;
