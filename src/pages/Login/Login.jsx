@@ -96,7 +96,9 @@ function Login({ onLogin }) {
             <div className="login-hint">
               <p><strong>Usuários de teste:</strong></p>
               {users.map(user => (
-                <p key={user.id}>{user.username} / {user.password}</p>
+                <p key={user.id} style={user.origem === 'agente' ? { color: 'red' } : {}}>
+                {user.username} / {user.password}
+              </p>
               ))}
             </div>
           </form>
