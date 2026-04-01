@@ -29,7 +29,7 @@ function Login({ onLogin }) {
     )
 
     if (user) {
-      onLogin({id: user.id , username : user.username})
+      onLogin({id: user.id , username : user.username, origem: user.origem, userAgenteId: user.agenteId})
       navigate('/dashboard')
     } else {
       setLoginError('Usuário ou senha inválidos')

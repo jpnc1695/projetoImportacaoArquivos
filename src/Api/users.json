@@ -1,36 +1,35 @@
 {
-  "agentes": [
+  "users": [
+    {
+      "id": 1,
+      "username": "joao.costa",
+      "password": "123456",
+      "name": "joao paulo",
+      "email": "joao@email.com",
+      "role": "user",
+      "origem": "importacao",
+      "createdAt": "2026-03-31T16:28:05.413Z"
+    },
     {
       "id": 2,
-      "username": "pedroAgente",
-      "name": "pedro agente",
-      "email": "pedroAgente@email.com",
-      "role": "agente",
-      "createdAt": "2026-02-25T16:15:36.296Z"
+      "username": "joao.agente",
+      "password": "123456",
+      "name": "joao costa agente",
+      "email": "joaoagete@email.com",
+      "role": "user",
+      "origem": "agente",
+      "createdAt": "2026-03-31T16:28:54.513Z"
     },
     {
       "id": 3,
-      "username": "pauloAgente",
-      "name": "paulo",
-      "email": "paulo@agente.com",
-      "role": "agente",
-      "createdAt": "2026-02-25T19:06:11.698Z"
-    },
-    {
-      "id": 4,
-      "username": "agenteChina",
-      "name": "Agente China",
-      "email": "agenteChina@email.com",
-      "role": "agente",
-      "createdAt": "2026-02-26T11:59:57.081Z"
-    },
-    {
-      "id": 5,
-      "username": "maghi",
-      "name": "Cmd",
-      "email": "cmd@teste.com",
-      "role": "agente",
-      "createdAt": "2026-02-27T13:58:27.526Z"
+      "username": "fc.teste",
+      "password": "123456",
+      "name": "fc teste",
+      "email": "fcteste@email.com",
+      "role": "user",
+      "origem": "agente",
+      "agenteId": "1",
+      "createdAt": "2026-04-01T14:49:57.791Z"
     }
   ]
 }

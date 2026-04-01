@@ -72,6 +72,7 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
             uploadDate: new Date().toLocaleDateString('pt-BR'),
             base64Data,
             agente: selectedAgent,
+            agenteId: agentes.find(a => a.name === selectedAgent)?.id || null,
             numeroProcesso: processNumber,
             userId: userId,
             status: 'pendente',

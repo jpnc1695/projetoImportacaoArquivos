@@ -36,8 +36,9 @@ const base64ToBlob = (base64) => {
   }
 };
 
-function Dashboard({ username, userId, onLogout }) {
-  console.log('Dashboard renderizado com userId:', userId);
+function Dashboard({ username, userId, onLogout, userOrigem, userAgenteId }) {
+
+  console.log('Dashboard renderizado com:', { username, userId, userOrigem });
   const [pdfFiles, setPdfFiles] = useState([]);
   const [agentes, setAgentes] = useState([]);
   const navigate = useNavigate();
@@ -49,8 +50,7 @@ function Dashboard({ username, userId, onLogout }) {
       if (saved) {
         try {
           const filesData = JSON.parse(saved);
-          const userFiles = filesData.filter(file => file.userId === userId);
-          setPdfFiles(userFiles);
+          setPdfFiles(filesData);
         } catch (error) {
           console.error('Erro ao carregar arquivos:', error);
         }
@@ -59,6 +59,8 @@ function Dashboard({ username, userId, onLogout }) {
     loadSavedFiles();
   }, [userId]);
 
+
+  console.log('pdf', pdfFiles);
   // Carrega os agentes do JSON
   useEffect(() => {
     if (agentesData && agentesData.agentes) {
@@ -205,12 +207,14 @@ function Dashboard({ username, userId, onLogout }) {
             <p>Bem-vindo, {username}!</p>
           </div>
 
-          {/* Componente de upload extraído */}
-          <ImportarArquivos
-            agentes={agentes}
-            userId={userId}
-            onUploadComplete={handleUploadComplete}
-          />
+       {/*    {/* Componente de upload extraído */}
+         {userOrigem !== 'agente' && (
+            <ImportarArquivos
+              agentes={agentes}
+              userId={userId}
+              onUploadComplete={handleUploadComplete}
+            />
+            )} 
 
           {/* Componente FileList */}
           <FileList
@@ -221,6 +225,8 @@ function Dashboard({ username, userId, onLogout }) {
             onRemoveAll={handleRemoveAllFiles}
             formatFileSize={formatFileSize}
             onStatusChange={handleStatusChange}
+            userOrigem = {userOrigem}
+            userAgenteId={userAgenteId}
           />
         </div>
       </div>

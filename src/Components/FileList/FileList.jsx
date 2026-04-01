@@ -3,75 +3,83 @@ import React, { useState, useMemo, useEffect } from 'react';
 import CaixaDeDialogo from '../CaixaDeDialogo/CaixaDeDialogo';
 import './FileList.css';
 
-const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, formatFileSize, onStatusChange, onDownloadSelected  }) => {
+const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, formatFileSize, onStatusChange, onDownloadSelected, userOrigem, userAgenteId }) => {
   const [filters, setFilters] = useState({
     agente: '',
     processo: '',
     status: '',
     tipoArquivo: ''
   });
-  
+
+  console.log('FileList renderizado com:', {  userOrigem, userAgenteId });
+
   const [showFilters, setShowFilters] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-
   useEffect(() => {
     setSelectedIds(new Set());
   }, [filters]);
 
-  // Extrai valores únicos para os filtros - com tratamento de null/undefined
+  // 🔹 1. Filtra os arquivos com base no tipo de usuário (agente ou não)
+  const accessibleFiles = useMemo(() => {
+    if (userOrigem === 'agente') {
+      // Se for agente, mantém apenas os arquivos relacionados ao seu ID
+      return pdfFiles.filter(file => file.agenteId && String(file.agenteId) === String(userAgenteId));
+    }
+    // Caso contrário (admin, etc.), exibe todos os arquivos
+    return pdfFiles;
+  }, [pdfFiles, userOrigem, userAgenteId]);
+
+  // Extrai valores únicos para os filtros - usando apenas os arquivos acessíveis
   const uniqueValues = useMemo(() => {
     const agentes = [...new Set(
-      pdfFiles
+      accessibleFiles
         .map(file => file.agente)
         .filter(agente => agente && agente !== 'Não atribuído')
     )].sort();
-    
+
     const processos = [...new Set(
-      pdfFiles
+      accessibleFiles
         .map(file => file.numeroProcesso)
         .filter(processo => processo && processo !== 'Não informado')
     )].sort();
-    
 
     const tipoArquivo = [...new Set(
-      pdfFiles
+      accessibleFiles
         .map(file => file.tipoArquivo)
         .filter(tipoArquivo => tipoArquivo && tipoArquivo !== 'Não informado')
     )].sort();
 
-
     return { agentes, processos, tipoArquivo };
-  }, [pdfFiles]);
+  }, [accessibleFiles]);
 
-  // Aplica os filtros aos arquivos - corrigido
+  // Aplica os filtros de UI sobre a lista de arquivos acessíveis
   const filteredFiles = useMemo(() => {
-    return pdfFiles.filter(file => {
-      const matchAgente = !filters.agente || 
+    return accessibleFiles.filter(file => {
+      const matchAgente = !filters.agente ||
         (file.agente && file.agente === filters.agente);
-      
-      const matchProcesso = !filters.processo || 
+
+      const matchProcesso = !filters.processo ||
         (file.numeroProcesso && file.numeroProcesso === filters.processo);
-      
-      // 👇 Adiciona filtro por status
-      const matchStatus = !filters.status || 
+
+      const matchStatus = !filters.status ||
         (file.status && file.status === filters.status);
 
-      const matchTipo = !filters.tipoArquivo || 
-        (file.tipoArquivo && file.tipoArquivo === filters.tipoArquivo.toLocaleLowerCase());
-      
+      const matchTipo = !filters.tipoArquivo ||
+        (file.tipoArquivo && file.tipoArquivo === filters.tipoArquivo.toLowerCase());
+
       return matchAgente && matchProcesso && matchStatus && matchTipo;
     });
-  }, [pdfFiles, filters]);
+  }, [accessibleFiles, filters]);
 
+  // ... (restante das funções: handleStatusClick, handleDialogConfirm, etc., inalteradas)
   const handleStatusClick = (file) => {
     setSelectedFile(file);
     setDialogOpen(true);
   };
 
-  // Callback chamado quando o usuário escolhe um status no diálogo
   const handleDialogConfirm = (status, reason) => {
     if (selectedFile && onStatusChange) {
       onStatusChange(selectedFile.id, status, reason);
@@ -87,12 +95,11 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Mudando filtro ${name} para:`, value); // Para debug
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const clearFilters = () => {
-    setFilters({ agente: '', processo: '', status: '' });
+    setFilters({ agente: '', processo: '', status: '', tipoArquivo: '' });
   };
 
   const handleDownloadFile = (file) => {
@@ -111,11 +118,10 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
 
   const handleRemoveAll = () => {
     if (window.confirm(`Tem certeza que deseja remover todos os ${filteredFiles.length} arquivo(s) mostrados?`)) {
-      onRemoveAll(filteredFiles); // Passa apenas os arquivos filtrados
+      onRemoveAll(filteredFiles);
     }
   };
 
-  // Função para obter o texto do status
   const getStatusText = (status) => {
     const statusMap = {
       'pendente': 'Pendente',
@@ -124,23 +130,27 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
     };
     return statusMap[status] || 'Pendente';
   };
-  // Calcula o tamanho total dos arquivos filtrados
+
   const calculateTotalSize = () => {
     if (filteredFiles.length === 0) return formatFileSize('0');
     const totalKB = filteredFiles.reduce((total, file) => total + parseFloat(file.size), 0);
     return formatFileSize(totalKB.toFixed(2));
   };
 
-  // Verifica se há filtros ativos
   const hasActiveFilters = filters.agente || filters.processo || filters.status || filters.tipoArquivo;
 
-  if (pdfFiles.length === 0) {
+  // 🔹 2. Mensagem quando não há arquivos acessíveis (nem mesmo antes dos filtros)
+  if (accessibleFiles.length === 0) {
     return (
       <div className="list-section">
         <div className="list-header">
           <h2>Arquivos Importados</h2>
         </div>
-        <p className="empty-message">Nenhum arquivo importado</p>
+        <p className="empty-message">
+          {userOrigem === 'agente'
+            ? 'Nenhum arquivo associado a este agente foi encontrado.'
+            : 'Nenhum arquivo importado'}
+        </p>
       </div>
     );
   }
@@ -149,9 +159,8 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
     <div className="list-section">
       <div className="list-header">
         <div className="header-title">
-
           <h2>Arquivos Importados</h2>
-          <button 
+          <button
             onClick={() => setShowFilters(!showFilters)}
             className="filter-toggle-button"
             title={showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
@@ -162,17 +171,14 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
           </button>
         </div>
         <div className="list-actions">
-
           <button
             onClick={() => {
               const selectedFiles = Array.from(selectedIds).map(id =>
-                pdfFiles.find(f => f.id === id)
+                accessibleFiles.find(f => f.id === id)
               );
-              // Se você tem uma prop específica para baixar múltiplos arquivos selecionados:
               if (onDownloadSelected) {
                 onDownloadSelected(selectedFiles);
               } else {
-                // Fallback: chama onDownload para cada arquivo (ou use onDownloadAll)
                 selectedFiles.forEach(file => onDownload(file));
               }
             }}
@@ -184,7 +190,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
             Baixar Selecionados ({selectedIds.size})
           </button>
 
-          <button 
+          <button
             onClick={handleDownloadAll}
             className="download-all-button"
             title="Baixar todos os arquivos"
@@ -194,7 +200,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
             Baixar Todos
           </button>
 
-          <button 
+          <button
             onClick={handleRemoveAll}
             className="remove-all-button"
             title="Remover todos os arquivos"
@@ -247,23 +253,22 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
             </div>
 
             <div className="filter-group">
-        <label htmlFor="filter-tipoArquivo">Filtrar por tipo de arquivo:</label>
-        <select
-          id="filter-tipoArquivo"
-          name="tipoArquivo"
-          value={filters.tipoArquivo}
-          onChange={handleFilterChange}
-          className="filter-select"
-        >
-          <option value="">Todos os Arquivos</option>
-          {uniqueValues.tipoArquivo.map(tipo => (
-            <option key={tipo} value={tipo}>{tipo}</option>
-          ))}
-        </select>
-      </div>
+              <label htmlFor="filter-tipoArquivo">Filtrar por tipo de arquivo:</label>
+              <select
+                id="filter-tipoArquivo"
+                name="tipoArquivo"
+                value={filters.tipoArquivo}
+                onChange={handleFilterChange}
+                className="filter-select"
+              >
+                <option value="">Todos os Arquivos</option>
+                {uniqueValues.tipoArquivo.map(tipo => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
 
-             {/* Novo filtro por status */}
-             <div className="filter-group">
+            <div className="filter-group">
               <label htmlFor="filter-status">Filtrar por Status:</label>
               <select
                 id="filter-status"
@@ -278,7 +283,6 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                 <option value="reprovado">Reprovado</option>
               </select>
             </div>
-            
 
             {hasActiveFilters && (
               <button onClick={clearFilters} className="clear-filters-button">
@@ -287,13 +291,13 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
               </button>
             )}
           </div>
-          
+
           <div className="filter-results-info">
-            Mostrando {filteredFiles.length} de {pdfFiles.length} arquivo(s)
+            Mostrando {filteredFiles.length} de {accessibleFiles.length} arquivo(s)
           </div>
         </div>
       )}
-      
+
       <div className="pdf-list">
         {filteredFiles.length === 0 ? (
           <div className="no-results-message">
@@ -317,8 +321,8 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                   }
                   setSelectedIds(newSelected);
                 }}
-              />              
-              
+              />
+
               <div className="pdf-info">
                 <span className="pdf-name">{file.name}</span>
                 <span className="pdf-details">
@@ -329,61 +333,55 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
                   {file.numeroProcesso && file.numeroProcesso !== 'Não informado' && (
                     <span className="processo-tag"> • Processo: {file.numeroProcesso}</span>
                   )}
-
                   {file.tipoArquivo && file.tipoArquivo !== 'Não informado' && (
                     <span className="tipoArquivo-tag"> • Tipo de Arquivo: {file.tipoArquivo}</span>
                   )}
-
-                {file.status === 'reprovado' && file.rejectionReason && (
+                  {file.status === 'reprovado' && file.rejectionReason && (
                     <span className="rejection-reason-tag"> • Motivo: {file.rejectionReason}</span>
                   )}
                 </span>
               </div>
               <div className="pdf-actions">
+                <button
+                  onClick={() => handleStatusClick(file)}
+                  className={`status-button-single ${file.status || 'pendente'}`}
+                  title="Clique para alterar o status"
+                >
+                  {getStatusText(file.status)}
+                </button>
 
-              <button
-                onClick={() => handleStatusClick(file)}
-                className={`status-button-single ${file.status || 'pendente'}`}
-                title="Clique para alterar o status"
-              >
-                {getStatusText(file.status)}
-              </button>
-
-                <button 
+                <button
                   onClick={() => handleDownloadFile(file)}
                   className="download-button"
                   title="Baixar arquivo"
                 >
                   <span className="download-icon">📥</span>
                 </button>
-                <button 
+                <button
                   onClick={() => handleRemoveFile(file.id)}
                   className="remove-button"
                   title="Remover arquivo"
                 >
-                  <span className="remove-icon">🗑️</span>                    
+                  <span className="remove-icon">🗑️</span>
                 </button>
               </div>
-
-         
-              
             </div>
           ))
-        )}   
+        )}
         {filteredFiles.length > 0 && (
           <div className="pdf-stats">
             <span>Total: {filteredFiles.length} arquivo(s)</span>
             <span>Total: {calculateTotalSize()}</span>
           </div>
         )}
-      </div>      
-      <CaixaDeDialogo
-                isOpen={dialogOpen}
-                onClose={handleDialogClose}
-                onConfirm={handleDialogConfirm}
-                fileName={selectedFile?.name}
-              />
+      </div>
 
+      <CaixaDeDialogo
+        isOpen={dialogOpen}
+        onClose={handleDialogClose}
+        onConfirm={handleDialogConfirm}
+        fileName={selectedFile?.name}
+      />
     </div>
   );
 };

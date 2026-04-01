@@ -12,6 +12,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
 
   const handleLogin = (user) => {
+    console.log(user)
     setIsAuthenticated(true)
     setCurrentUser(user)
   }
@@ -36,8 +37,9 @@ function App() {
           path="/dashboard" 
           element={
             isAuthenticated ? 
-              <Dashboard username={currentUser.username} userId={currentUser.id} onLogout={handleLogout} /> : 
+              <Dashboard username={currentUser.username} userId={currentUser.id} userOrigem={currentUser.origem} onLogout={handleLogout} userAgenteId={currentUser.userAgenteId} /> : 
               <Navigate to="/" />
+
           } 
         />
          <Route 

@@ -1,4 +1,5 @@
 const express = require('express');
+const {body, validationResult} = require('express-validator');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -20,6 +21,8 @@ const readUsers = () => {
   }
 };
 
+
+
 const readAgentes = () => {
   try {
     const data = fs.readFileSync(AGENTE_FILE, 'utf8');
@@ -36,6 +39,28 @@ const writeUsers = (data) => {
 const writeAgentes = (data) => {
   fs.writeFileSync(AGENTE_FILE, JSON.stringify(data, null, 2), 'utf8');
 };
+
+function readAgentesPorId(id) {
+  try {
+    const data = fs.readFileSync(AGENTE_FILE, 'utf8');
+    const parsed = JSON.parse(data);
+
+    // Normaliza para trabalhar sempre com array
+    let agentes = [];
+    if (Array.isArray(parsed)) {
+      agentes = parsed;
+    } else if (parsed && Array.isArray(parsed.agentes)) {
+      agentes = parsed.agentes;
+    }
+
+    // Busca o agente pelo ID (comparando como string para evitar erros de tipo)
+    const agente = agentes.find(agente => String(agente.id) === String(id));
+    return agente || null; // se não achar, retorna null
+  } catch (error) {
+    console.error('Erro ao ler o arquivo de agentes:', error.message);
+    return null; // em caso de erro, retorna null
+  }
+}
 
 
 // Endpoint de login
@@ -60,6 +85,7 @@ app.get('/api/agentes', (req, res) => {
 });
 
 
+
 // Endpoint para listar usuários
 app.get('/api/users', (req, res) => {
   const data = readUsers();
@@ -67,12 +93,43 @@ app.get('/api/users', (req, res) => {
   res.json(usersWithoutPasswords);
 });
 
+
+const validateUser = [
+  body('username').notEmpty(),
+  body('password').notEmpty(),
+  body('name').notEmpty(),
+  body('email').isEmail(),
+  body('origem').isIn(['importacao', 'agente', 'manual']), // suas opções
+  body('agenteId')
+    .if(body('origem').equals('agente'))
+    .notEmpty().withMessage('agenteId é obrigatório quando origem = agente')
+    .isInt().withMessage('agenteId deve ser um número inteiro'),
+  // se não for agente, agenteId é opcional e pode ser null
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
 // Endpoint para cadastrar novo usuário
-app.post('/api/register', (req, res) => {
-  const { username, password, name, email, origem } = req.body;
+app.post('/api/register', validateUser, async (req, res) => {
+
+  console.log('Requisição de registro recebida:', validateUser);
+  const { username, password, name, email, origem, agenteId } = req.body;
+  const agente = readAgentesPorId(agenteId);
+
+  console.log('Agentes disponíveis:', agente);
+  if (origem === 'agente') {
+    if (!agente) {
+      return res.status(400).json({ error: 'Agente não encontrado' });
+    }
+  }
   
   // Validações básicas
-  if (!username || !password || !name || !email || !origem) {
+  if (!username || !password || !name || !email || !origem ) {
     return res.status(400).json({ 
       success: false, 
       message: 'Todos os campos são obrigatórios' 
@@ -108,6 +165,7 @@ app.post('/api/register', (req, res) => {
     email,
     role: 'user',
     origem,
+    agenteId: origem === 'agente' ? agenteId : null,
     createdAt: new Date().toISOString()
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Botao from '../../Components/Button/Button.jsx'
 import olhoAberto from '/src/assets/icons8-visível-50.png'
@@ -12,15 +12,38 @@ function Register() {
     username: '',
     password: '',
     confirmPassword: '',
-    origem: 'importacao'
+    origem: 'importacao',
+    agenteId: ''
   })
   
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loadingAgents, setLoadingAgents] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  
+  const [agents, setAgents] = useState([]);
+
+
+    useEffect(() => {
+      fetchAgents();
+    }, []);
+   
+  const fetchAgents = async () => {
+    setLoadingAgents(true)
+    try {
+      const res = await fetch('http://localhost:3001/api/agentes'); // ajuste a URL
+      if (!res.ok) throw new Error('Erro ao carregar agentes');
+      const data = await res.json();
+      setAgents(data);
+    } catch (err) {
+      setError((prev) => ({ ...prev, agents: err.message }));
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -81,7 +104,8 @@ function Register() {
           email: formData.email,
           username: formData.username,
           password: formData.password,
-          origem: formData.origem
+          origem: formData.origem,
+          agenteId: formData.origem === 'agente' ? formData.agenteId : null
         })
       })
 
@@ -169,6 +193,29 @@ function Register() {
                 <option value="agente">Agente</option>
               </select>
             </div>
+
+          {formData.origem === 'agente' && (  
+            <div className="form-group" >
+              <label htmlFor="Agente">Agentes</label>
+              <select
+                id="agente"
+                name="agenteId"
+                value={formData.agenteId}
+                onChange={handleChange} 
+                required = {formData.origem === 'agente'}
+                disabled={loadingAgents || loading}
+                className="origem-select"
+              >
+               <option value="">Selecione um agente</option>
+                {agents.map(agente => (
+                  <option key={agente.id} value={agente.id}>
+                    {agente.name} {/* ajuste conforme os campos retornados pela API */}
+                  </option>
+                ))}
+              </select>
+            </div>
+            )}
+
 
             <div className="form-group">
               <label htmlFor="password">Senha</label>
