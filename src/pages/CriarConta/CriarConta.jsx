@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Botao from '../../Components/Button/Button.jsx'
 import olhoAberto from '/src/assets/icons8-visível-50.png'
 import olhoFechado from '/src/assets/icons8-ocultar-50.png'
+import { supabase } from '../../supabaseClient';
+
 import './CriarConta.css'
 
 function Register() {
@@ -27,6 +29,13 @@ function Register() {
 
 
     useEffect(() => {
+      const fetchAgents = async () => {
+        const { data, error } = await supabase
+          .from('agentes')
+          .select('*')
+          .order('id');
+        if (!error) setAgents(data);
+      };
       fetchAgents();
     }, []);
    

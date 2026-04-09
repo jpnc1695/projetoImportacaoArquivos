@@ -1,8 +1,6 @@
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
 const fs = require('fs');
-const path = require('path');
 const app = express();
 const dotenv = require('dotenv');
 const config = require('../../config.js'); // ajuste o caminho relativo
@@ -78,51 +76,6 @@ function readAgentesPorId(id) {
 }
 
 
-// Endpoint de login
-/* app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-
-  // Validação básica
-  if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Login e senha são obrigatórios' });
-  }
-
-  try {
-    // Chama a API externa com os parâmetros "login" e "password"
-    console.log('Enviando requisição para API externa com:', { login: username, password: password });
-    var Urllogin = 'https://ai-first.firstclasshome.com.br/api/login'
-
-    const response = await axios.post(Urllogin, {
-      login: username,
-      password: password
-    });
-
-    // Supondo que a API externa retorne algo como:
-    // { success: true, user: { id, name, email, ... } } ou apenas um token
-    // Ajuste conforme a resposta real da API.
-    if (response.data && response.data.status === 'OK') {
-      // Se a resposta já trouxer os dados do usuário (sem senha), podemos usá-los diretamente
-      const userData = response.data.device_code; // adapte conforme necessário
-      console.log(userData);
-      // Se a API não retornar o usuário, você pode buscar ou montar um objeto básico
-      res.json(response.data);
-    } else {
-      // Se a API retornou sucesso false ou estrutura diferente
-      res.status(401).json({ 
-        success: false, 
-        message: response.data.message || 'Credenciais inválidas' 
-      });
-    }
-  } catch (error) {
-    // Tratamento de erro (credenciais inválidas, API offline, etc.)
-    console.error('Erro ao autenticar na API externa:', error.message);
-    if (error.response && error.response.status === 401) {
-      res.status(401).json({ success: false, message: 'Usuário ou senha inválidos' });
-    } else {
-      res.status(500).json({ success: false, message: 'Erro interno ao validar credenciais' });
-    }
-  }
-}); */
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
@@ -162,38 +115,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-/* // Endpoint de polling – verifica se o usuário já autorizou o dispositivo
-app.post('/api/device/token', async (req, res) => {
-  const { device_code } = req.body;
-
-  if (!device_code) {
-    return res.status(400).json({ error: 'device_code é obrigatório' });
-  }
-
-    var Logintoken  = 'https://ai-first.firstclasshome.com.br/api/login'
-
-  try {
-    // Chama o endpoint da API externa que verifica o status do device
-    // (Ajuste a URL conforme a documentação da API – exemplo genérico)
-    const response = await axios.post( Logintoken, {
-      device_code: device_code
-    });
-
-    // A resposta da API externa pode ter campos como:
-    // { auth_status: "authorized" | "pending" | "expired", user_id, username, access_token, ... }
-    // Retornamos exatamente o que ela devolve
-    console.log(`Polling com device_code: ${device_code}, resposta:`, response.data);
-    return res.json(response.data);
-
-  } catch (error) {
-    console.error('Erro no polling:', error.message);
-    // Se a API retornar 400/404, provavelmente o device_code é inválido ou expirou
-    if (error.response?.status === 400 || error.response?.status === 404) {
-      return res.status(400).json({ auth_status: 'expired', error: 'Device code inválido ou expirado' });
-    }
-    return res.status(500).json({ error: 'Erro ao verificar autorização' });
-  }
-}); */
 
 
 // Endpoint para listar usuários
@@ -209,6 +130,21 @@ app.get('/api/users', async (req, res) => {
 
   }
 });
+
+// Endpoint para listar usuários
+app.get('/api/agentes', async (req, res) => {
+  try {
+  const data = await readAgentes();
+  const usersWithoutPasswords = data.agentes.map(({ password, ...agente }) => agente);
+  res.json(usersWithoutPasswords);
+}
+  catch (error) {
+      console.error('Erro ao ler usuários:', error.message);
+      res.status(500).json({ success: false, message: 'Erro interno ao ler usuários' });
+
+  }
+});
+
 
 
 const validateUser = [
