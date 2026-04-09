@@ -28,31 +28,19 @@ function Register() {
   const [agents, setAgents] = useState([]);
 
 
-    useEffect(() => {
-      const fetchAgents = async () => {
-        const { data, error } = await supabase
-          .from('agentes')
-          .select('*')
-          .order('id');
-        if (!error) setAgents(data);
-      };
-      fetchAgents();
-    }, []);
-   
+
   const fetchAgents = async () => {
-    setLoadingAgents(true)
-    try {
-      const res = await fetch('http://localhost:3001/api/agentes'); // ajuste a URL
-      if (!res.ok) throw new Error('Erro ao carregar agentes');
-      const data = await res.json();
-      setAgents(data);
-    } catch (err) {
-      setError((prev) => ({ ...prev, agents: err.message }));
-    } finally {
-      setLoadingAgents(false);
-    }
+    const { data, error } = await supabase
+      .from('agentes')
+      .select('*')
+      .order('id');
+    if (!error) setAgents(data);
   };
 
+    useEffect(() => {
+      fetchAgents();
+    }, []);
+ 
   const navigate = useNavigate()
 
   const handleChange = (e) => {

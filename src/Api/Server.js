@@ -144,15 +144,12 @@ app.get('/api/agentes', async (req, res) => {
 
   }
 });
-
-
-
 const validateUser = [
   body('username').notEmpty(),
   body('password').notEmpty(),
   body('name').notEmpty(),
   body('email').isEmail(),
-  body('origem').isIn(['importacao', 'agente', 'manual']), // suas opções
+  body('origem').isIn(['importacao', 'agente', 'marketing']), // suas opções
   body('agenteId')
     .if(body('origem').equals('agente'))
     .notEmpty().withMessage('agenteId é obrigatório quando origem = agente')
@@ -168,20 +165,12 @@ const validateUser = [
 ];
 
 // Endpoint para cadastrar novo usuário
-app.post('/api/register', validateUser, async (req, res) => {
+/* app.post('/api/register', validateUser, async (req, res) => {
 
-  console.log('Requisição de registro recebida:', validateUser);
   const { username, password, name, email, origem, agenteId } = req.body;
   const agente = readAgentesPorId(agenteId);
-
-  console.log('Agentes disponíveis:', agente);
-  if (origem === 'agente') {
-    if (!agente) {
-      return res.status(400).json({ error: 'Agente não encontrado' });
-    }
-  }
-  
   // Validações básicas
+
   if (!username || !password || !name || !email || !origem ) {
     return res.status(400).json({ 
       success: false, 
@@ -189,6 +178,28 @@ app.post('/api/register', validateUser, async (req, res) => {
     });
   }
 
+  try {
+    
+    if (origem === 'agente' && !agente) {
+      if(!agenteId){
+        return res.status(400).json({ 
+          success: false, 
+          message: 'agenteId é obrigatório quando origem = agente' 
+        });
+       
+      }
+    }
+    const {data: userExistente, error:checkerror} = await supabase.from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    
+
+  } catch (error) {
+    
+  }
+  
   const data = readUsers();
   
   // Verificar se usuário já existe
@@ -234,7 +245,108 @@ app.post('/api/register', validateUser, async (req, res) => {
     user: userWithoutPassword 
   });
 });
+ */
 
+app.post('/api/register', validateUser, async (req, res) => {
+  const { username, password, name, email, origem, agenteId } = req.body;
+
+  // 1. Validação básica
+  if (!username || !password || !name || !email || !origem) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Todos os campos são obrigatórios' 
+    });
+  }
+
+  try {
+    // 2. Se a origem for 'agente', verificar se o agente existe no Supabase
+    if (origem === 'agente') {
+      if (!agenteId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'agenteId é obrigatório quando origem = agente' 
+        });
+      }
+
+      const { data: agente, error: agenteError } = await supabase
+        .from('agentes')
+        .select('id')
+        .eq('id', agenteId)
+        .single();
+
+      if (agenteError || !agente) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Agente não encontrado' 
+        });
+      }
+    }
+
+    // 3. Verificar se username ou email já existem
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('username, email')
+      .or(`username.eq.${username},email.eq.${email}`);
+
+    if (existingUser && existingUser.length > 0) {
+      const conflict = existingUser[0];
+      if (conflict.username === username) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Nome de usuário já existe' 
+        });
+      }
+      if (conflict.email === email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email já cadastrado' 
+        });
+      }
+    }
+
+    // 4. Criar objeto do novo usuário
+    const newUser = {
+      username,
+      password, // ⚠️ Em produção: hash com bcrypt antes de salvar!
+      name,
+      email,
+      role: 'user',
+      origem,
+      agenteId: origem === 'agente' ? agenteId : null,
+      createdAt: new Date().toISOString()
+    };
+
+    // 5. Inserir no Supabase
+    const { data: inserted, error: insertError } = await supabase
+      .from('users')
+      .insert([newUser])
+      .select(); // retorna o registro inserido
+
+    if (insertError) {
+      console.error('Erro ao inserir usuário:', insertError);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno ao cadastrar usuário' 
+      });
+    }
+
+    // 6. Remover a senha da resposta
+    const { password: _, ...userWithoutPassword } = inserted[0];
+
+    res.json({ 
+      success: true, 
+      message: 'Usuário cadastrado com sucesso',
+      user: userWithoutPassword 
+    });
+
+  } catch (error) {
+    console.error('Erro inesperado no cadastro:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno no servidor' 
+    });
+  }
+});
 
 app.delete('/api/agentes/:id', (req, res) => {
   const agenteId = parseInt(req.params.id);
