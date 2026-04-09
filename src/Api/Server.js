@@ -135,7 +135,7 @@ app.post('/api/login', async (req, res) => {
     // Busca o usuário no Supabase pelo username
     const { data, error } = await supabase
       .from('users')
-      .select('id, username, name, email, role, origem, password,"agenteId"')
+      .select('*')
       .eq('username', username)
       .single();
       console.log(data)
