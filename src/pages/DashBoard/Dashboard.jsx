@@ -71,6 +71,7 @@ function Dashboard({ username, userId, onLogout, userOrigem, userAgenteId }) {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('authToken'); 
     onLogout();
     navigate('/');
   };

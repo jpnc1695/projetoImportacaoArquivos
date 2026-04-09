@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login/Login'
 import Dashboard from './pages/DashBoard/Dashboard'
@@ -11,6 +11,18 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
 
+
+
+/*   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Opcional: validar token com o backend (ex: chamada /api/verify)
+      setIsAuthenticated(true);
+      // Recupera dados do usuário se necessário (pode estar salvo em outro lugar)
+      // setUser({ ... });
+    }
+  }, []); */
+
   const handleLogin = (user) => {
     console.log(user)
     setIsAuthenticated(true)
@@ -19,7 +31,7 @@ function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    setCurrentUser('')
+    setCurrentUser()
   }
 
   return (
@@ -37,7 +49,7 @@ function App() {
           path="/dashboard" 
           element={
             isAuthenticated ? 
-              <Dashboard username={currentUser.username} userId={currentUser.id} userOrigem={currentUser.origem} onLogout={handleLogout} userAgenteId={currentUser.userAgenteId} /> : 
+              <Dashboard username={currentUser.username} userId={currentUser.id} userOrigem={currentUser.origem} onLogout={handleLogout} userAgenteId={currentUser.agenteId} /> : 
               <Navigate to="/" />
 
           } 
