@@ -9,7 +9,7 @@ const {body, validationResult} = require('express-validator');
 const { createClient } = require('@supabase/supabase-js');
 
 
-dotenv.config({path: config});
+dotenv.config();
 
 app.use(cors());
 app.use(express.json());
@@ -438,6 +438,4 @@ app.post('/api/registerAgente', (req, res) => {
   });
 });
 
-app.listen(3001, () => {
-  console.log('Servidor rodando na porta 3001');
-});
+module.exports = app;
