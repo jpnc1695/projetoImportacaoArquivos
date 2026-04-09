@@ -41,7 +41,7 @@ function Login({ onLogin }) {
       <div className="login-container">
         <div className="login-box">
           <div className="login-header">
-            <h1>Gerenciador de Arquivoda da importação</h1>
+            <h1>Gerenciador de Arquivos da importação</h1>
             <p>Faça login para acessar</p>
           </div>
 
