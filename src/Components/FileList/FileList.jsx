@@ -1,9 +1,11 @@
 // FileList.js
 import React, { useState, useMemo, useEffect } from 'react';
 import CaixaDeDialogo from '../CaixaDeDialogo/CaixaDeDialogo';
+import { supabase } from '../../supabaseClient';
+
 import './FileList.css';
 
-const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, formatFileSize, onStatusChange, onDownloadSelected, userOrigem, userAgenteId }) => {
+const FileList = ({ pdfFiles, onDownload, onRemove,  onRemoveAll, formatFileSize, onStatusChange, onDownloadSelected, userOrigem, userAgenteId }) => {
   const [filters, setFilters] = useState({
     agente: '',
     processo: '',
@@ -12,7 +14,7 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   });
 
   console.log('FileList renderizado com:', {  userOrigem, userAgenteId });
-
+  console.log('Arquivos recebidos:', pdfFiles);
   const [showFilters, setShowFilters] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -42,15 +44,15 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
 
     const processos = [...new Set(
       accessibleFiles
-        .map(file => file.numeroProcesso)
+        .map(file => file.processo)
         .filter(processo => processo && processo !== 'Não informado')
     )].sort();
 
     const tipoArquivo = [...new Set(
       accessibleFiles
-        .map(file => file.tipoArquivo)
-        .filter(tipoArquivo => tipoArquivo && tipoArquivo !== 'Não informado')
-    )].sort();
+        .map(file => file.tipodearquivo)
+        .filter(value => value && value !== 'Não informado')
+    )];
 
     return { agentes, processos, tipoArquivo };
   }, [accessibleFiles]);
@@ -58,8 +60,8 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
   // Aplica os filtros de UI sobre a lista de arquivos acessíveis
   const filteredFiles = useMemo(() => {
     return accessibleFiles.filter(file => {
-      const matchAgente = !filters.agente ||
-        (file.agente && file.agente === filters.agente);
+      const matchAgente = !filters.agenteId ||
+        (file.agenteId && file.agenteId === filters.agenteId);
 
       const matchProcesso = !filters.processo ||
         (file.numeroProcesso && file.numeroProcesso === filters.processo);
@@ -102,8 +104,28 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
     setFilters({ agente: '', processo: '', status: '', tipoArquivo: '' });
   };
 
-  const handleDownloadFile = (file) => {
-    onDownload(file);
+  const handleDownloadFile = async  (file) => {
+    try {
+      // Baixa o arquivo como blob
+      const { data, error } = await supabase.storage
+        .from('pdf-uploads')
+        .download(file.storagePath);
+  
+      if (error) throw error;
+  
+      // Cria URL do blob e força o download
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.name;      // nome do arquivo
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);       // libera memória
+    } catch (error) {
+      console.error('Erro no download:', error);
+      alert('Erro ao baixar arquivo');
+    }
   };
 
   const handleRemoveFile = (id) => {
@@ -112,10 +134,46 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
     }
   };
 
-  const handleDownloadAll = () => {
-    onDownloadAll(filteredFiles);
+  const handleDownloadAll = async (filteredFiles) => {
+    if (!filesToDownload.length) {
+      alert('Não há arquivos para download');
+      return;
+    }
+  
+    if (filesToDownload.length > 5 && !window.confirm(`Baixar ${filesToDownload.length} arquivos?`)) {
+      return;
+    }
+  
+    try {
+      const zip = new JSZip();
+  
+      for (const file of filesToDownload) {
+        const { data, error } = await supabase.storage
+          .from('pdf-uploads')
+          .download(file.storagePath);
+  
+        if (error) throw error;
+        zip.file(file.name, data);
+      }
+  
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `arquivos_${Date.now()}.zip`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      alert(`${filesToDownload.length} arquivo(s) baixado(s) com sucesso`);
+    } catch (error) {
+      console.error('Erro ao criar ZIP:', error);
+      alert('Erro ao baixar múltiplos arquivos');
+    }
   };
 
+/*   const handleDownloadAll = () => {
+    onDownloadAll(filteredFiles);
+  };
+ */
   const handleRemoveAll = () => {
     if (window.confirm(`Tem certeza que deseja remover todos os ${filteredFiles.length} arquivo(s) mostrados?`)) {
       onRemoveAll(filteredFiles);
@@ -324,23 +382,29 @@ const FileList = ({ pdfFiles, onDownload, onRemove, onDownloadAll, onRemoveAll, 
               />
 
               <div className="pdf-info">
-                <span className="pdf-name">{file.name}</span>
-                <span className="pdf-details">
-                  {formatFileSize(file.size)} • {file.uploadDate}
-                  {file.agente && file.agente !== 'Não atribuído' && (
-                    <span className="agente-tag"> • Agente: {file.agente}</span>
+                <div className="pdf-header">
+                  <span className="pdf-name">{file.name}</span>
+                  <div className="pdf-meta">
+                    <span>{formatFileSize(file.size)} • {file.uploadDate}</span>
+                  </div>
+                </div>
+
+                <div className="pdf-extra-info">
+                  {file.agenteId && file.agenteId !== 'Não atribuído' && (
+                    <span className="agente-tag">👤 Agente: {file.agenteId}</span>
                   )}
-                  {file.numeroProcesso && file.numeroProcesso !== 'Não informado' && (
-                    <span className="processo-tag"> • Processo: {file.numeroProcesso}</span>
+                  {file.processo && file.processo !== 'Não informado' && (
+                    <span className="processo-tag">📁 Processo: {file.processo}</span>
                   )}
-                  {file.tipoArquivo && file.tipoArquivo !== 'Não informado' && (
-                    <span className="tipoArquivo-tag"> • Tipo de Arquivo: {file.tipoArquivo}</span>
+                  {file.tipodearquivo && file.tipodearquivo !== 'Não informado' && (
+                    <span className="tipoArquivo-tag">📄 Tipo: {file.tipodearquivo}</span>
                   )}
                   {file.status === 'reprovado' && file.rejectionReason && (
-                    <span className="rejection-reason-tag"> • Motivo: {file.rejectionReason}</span>
+                    <span className="rejection-reason-tag">⚠️ Motivo: {file.rejectionReason}</span>
                   )}
-                </span>
+                </div>
               </div>
+
               <div className="pdf-actions">
                 <button
                   onClick={() => handleStatusClick(file)}

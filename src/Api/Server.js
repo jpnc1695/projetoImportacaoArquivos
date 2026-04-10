@@ -11,6 +11,14 @@ const { createClient } = require('@supabase/supabase-js');
 
 dotenv.config();
 
+
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando localmente na porta ${PORT}`);
+  });
+}
+
 app.use(cors());
 app.use(express.json());
 

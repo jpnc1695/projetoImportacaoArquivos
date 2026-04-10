@@ -1,191 +1,214 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
-import agentesData from '/src/Api/agentes.json';
+import { supabase } from '../../supabaseClient';
 import FileList from '../../Components/FileList/FileList';
-import ImportarArquivos from '../../Components/ImportarArquivos/ImportarArquivos'; // ajuste o caminho
+import ImportarArquivos from '../../Components/ImportarArquivos/ImportarArquivos';
 import './Dashboard.css';
 
-// Funções auxiliares que ainda são necessárias (base64ToBlob)
-const base64ToBlob = (base64) => {
-  // (mesma implementação anterior)
-  try {
-    if (!base64 || typeof base64 !== 'string') {
-      throw new Error('Base64 inválido');
-    }
-    let mimeType = 'application/octet-stream';
-    let base64Data = base64;
-    if (base64.includes(',')) {
-      const parts = base64.split(',');
-      const mimeMatch = parts[0].match(/:(.*?);/);
-      if (mimeMatch) {
-        mimeType = mimeMatch[1];
-      }
-      base64Data = parts[1];
-    }
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: 'application/pdf' });
-  } catch (error) {
-    console.error('Erro ao converter base64 para blob:', error);
-    throw error;
-  }
-};
-
 function Dashboard({ username, userId, onLogout, userOrigem, userAgenteId }) {
-
-  console.log('Dashboard renderizado com:', { username, userId, userOrigem });
   const [pdfFiles, setPdfFiles] = useState([]);
   const [agentes, setAgentes] = useState([]);
   const navigate = useNavigate();
 
-  // Carrega os arquivos salvos no localStorage
+  // Carrega os arquivos do Supabase
   useEffect(() => {
-    const loadSavedFiles = async () => {
-      const saved = localStorage.getItem('pdfiles_base64');
-      if (saved) {
-        try {
-          const filesData = JSON.parse(saved);
-          setPdfFiles(filesData);
-        } catch (error) {
-          console.error('Erro ao carregar arquivos:', error);
-        }
+    const loadFiles = async () => {
+      if (!userId) return;
+
+      const { data, error } = await supabase
+        .from('arquivos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar arquivos:', error);
+        return;
       }
+
+      // Converter cada registro para o formato esperado pelo FileList
+      setPdfFiles(data);
     };
-    loadSavedFiles();
+
+    loadFiles();
   }, [userId]);
 
+  // Carrega agentes (pode vir do Supabase também, mas mantemos o JSON por simplicidade)
+  const fetchAgents = async () => {
+    const { data, error } = await supabase
+      .from('agentes')
+      .select('*')
+      .order('id');
+    if (!error) setAgentes(data);
+  };
 
-  console.log('pdf', pdfFiles);
-  // Carrega os agentes do JSON
-  useEffect(() => {
-    if (agentesData && agentesData.agentes) {
-      setAgentes(agentesData.agentes);
-    } else {
-      console.error('Formato do JSON inválido. Esperado: { agentes: [...] }');
-    }
-  }, []);
+    useEffect(() => {
+      fetchAgents();
+    }, []);
+
+    
+
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken'); 
+    localStorage.removeItem('authToken');
     onLogout();
     navigate('/');
   };
 
-  // Callback chamado quando o upload é concluído
+  // Callback chamado após upload bem-sucedido (o ImportarArquivos já deve salvar no Supabase)
   const handleUploadComplete = (newFiles) => {
-    const updatedFiles = [...pdfFiles, ...newFiles];
-    setPdfFiles(updatedFiles);
-    localStorage.setItem('pdfiles_base64', JSON.stringify(updatedFiles));
+    // newFiles já devem ser os registros vindos do Supabase (com id, storagePath, etc.)
+    setPdfFiles(prev => [...newFiles, ...prev]);
   };
 
-  // Funções de download e remoção (inalteradas)
-  const handleDownload = (file) => {
+  // Download de um único arquivo (gera URL assinada)
+  const handleDownload = async (file) => {
     try {
-      if (file.base64Data) {
-        const blob = base64ToBlob(file.base64Data);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-      } else {
-        alert('Arquivo corrompido ou inválido');
-      }
+      const { data, error } = await supabase.storage
+        .from('pdf-uploads')
+        .createSignedUrl(file.storagePath, 60); // URL válida por 60 segundos
+
+      if (error) throw error;
+
+      const link = document.createElement('a');
+      link.href = data.signedUrl;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Erro no download:', error);
-
       alert('Erro ao baixar arquivo');
     }
   };
 
+  // Download de múltiplos arquivos (gera ZIP)
   const handleDownloadAll = async (filesToDownload) => {
-    // (mesma implementação anterior)
-    if (!filesToDownload || filesToDownload.length === 0) {
+    if (!filesToDownload.length) {
       alert('Não há arquivos para download');
       return;
     }
-    if (filesToDownload.length > 5) {
-      const confirm = window.confirm(
-        `Baixar ${filesToDownload.length} arquivos?\n\n`
-        
-      );
-      if (!confirm) return;
+
+    if (filesToDownload.length > 5 && !window.confirm(`Baixar ${filesToDownload.length} arquivos?`)) {
+      return;
     }
-   
+
     try {
       const zip = new JSZip();
 
       for (const file of filesToDownload) {
-        const blob = base64ToBlob(file.base64Data);
-        const arrayBuffer = await blob.arrayBuffer();
-        zip.file(file.name, arrayBuffer);
+        const { data, error } = await supabase.storage
+          .from('pdf-uploads')
+          .download(file.storagePath);
+
+        if (error) throw error;
+        zip.file(file.name, data);
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `arquivos_${Date.now()}.zip`; // nome do arquivo ZIP
+      link.download = `arquivos_${Date.now()}.zip`;
       link.click();
-
       setTimeout(() => URL.revokeObjectURL(url), 100);
       alert(`${filesToDownload.length} arquivo(s) baixado(s) com sucesso`);
-
     } catch (error) {
-      console.error(`Erro ao baixar ${file.name}:`, error);
-      errorCount++;
+      console.error('Erro ao criar ZIP:', error);
+      alert('Erro ao baixar múltiplos arquivos');
     }
-   
-
   };
 
-  const handleRemoveFile = (id) => {
-    const updatedFiles = pdfFiles.filter(file => file.id !== id);
-    setPdfFiles(updatedFiles);
-    const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
-    const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
-    const newAllFiles = [...otherUsersFiles, ...updatedFiles];
-    localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
+  // Remover um arquivo (Storage + tabela)
+  const handleRemoveFile = async (id) => {
+    const fileToRemove = pdfFiles.find(f => f.id === id);
+    if (!fileToRemove) return;
+
+    // Confirmação
+    if (!window.confirm(`Remover "${fileToRemove.name}" permanentemente?`)) return;
+
+    try {
+      // 1. Remove do Storage
+      const { error: storageError } = await supabase.storage
+        .from('pdf-uploads')
+        .remove([fileToRemove.storagePath]);
+
+      if (storageError) throw storageError;
+
+      // 2. Remove registro da tabela
+      const { error: dbError } = await supabase
+        .from('arquivos')
+        .delete()
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // 3. Atualiza estado local
+      setPdfFiles(prev => prev.filter(f => f.id !== id));
+    } catch (error) {
+      console.error('Erro ao remover arquivo:', error);
+      alert('Erro ao remover arquivo');
+    }
   };
 
-  const handleRemoveAllFiles = (filesToRemove) => {
+  // Remover todos os arquivos selecionados
+  const handleRemoveAllFiles = async (filesToRemove) => {
     const files = filesToRemove || pdfFiles;
-    if (window.confirm(`Tem certeza que deseja remover todos os ${files.length} arquivo(s)?`)) {
-      const remainingFiles = filesToRemove
-        ? pdfFiles.filter(file => !filesToRemove.some(f => f.id === file.id))
-        : [];
-      setPdfFiles(remainingFiles);
-      const allFiles = JSON.parse(localStorage.getItem('pdfiles_base64') || '[]');
-      const otherUsersFiles = allFiles.filter(file => file.userId !== userId);
-      const newAllFiles = [...otherUsersFiles, ...remainingFiles];
-      localStorage.setItem('pdfiles_base64', JSON.stringify(newAllFiles));
+    if (!files.length) return;
+    if (!window.confirm(`Remover todos os ${files.length} arquivo(s)?`)) return;
+
+    try {
+      // Remove todos do Storage
+      const paths = files.map(f => f.storagePath);
+      const { error: storageError } = await supabase.storage
+        .from('pdf-uploads')
+        .remove(paths);
+      if (storageError) throw storageError;
+
+      // Remove registros da tabela (ids)
+      const ids = files.map(f => f.id);
+      const { error: dbError } = await supabase
+        .from('arquivos')
+        .delete()
+        .in('id', ids);
+      if (dbError) throw dbError;
+
+      // Atualiza estado
+      setPdfFiles(prev => prev.filter(f => !ids.includes(f.id)));
+    } catch (error) {
+      console.error('Erro ao remover todos:', error);
+      alert('Erro ao remover arquivos');
     }
   };
 
-  const formatFileSize = (sizeInKB) => {
-    if (sizeInKB < 1024) {
-      return `${sizeInKB} KB`;
-    } else {
-      return `${(sizeInKB / 1024).toFixed(2)} MB`;
+  // Atualizar status (aprovado/reprovado) - usado pelo FileList
+  const handleStatusChange = async (id, status, reason) => {
+    try {
+      const { error } = await supabase
+        .from('arquivos')
+        .update({ status, rejection_reason: status === 'reprovado' ? reason : null })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPdfFiles(prev =>
+        prev.map(file =>
+          file.id === id
+            ? { ...file, status, rejectionReason: status === 'reprovado' ? reason : null }
+            : file
+        )
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status');
     }
   };
 
-  const handleStatusChange = (id, status, reason) => {
-    setPdfFiles(prev =>
-      prev.map(file =>
-        file.id === id
-          ? { ...file, status, rejectionReason: status === 'reprovado' ? reason : null }
-          : file
-      )
-    );
+  const formatFileSize = (sizeKB) => {
+    if (sizeKB < 1024) return `${sizeKB} KB`;
+    return `${(sizeKB / 1024).toFixed(2)} MB`;
   };
-  
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-container">
@@ -208,16 +231,14 @@ function Dashboard({ username, userId, onLogout, userOrigem, userAgenteId }) {
             <p>Bem-vindo, {username}!</p>
           </div>
 
-       {/*    {/* Componente de upload extraído */}
-         {userOrigem !== 'agente' && (
+          {userOrigem !== 'agente' && (
             <ImportarArquivos
               agentes={agentes}
               userId={userId}
               onUploadComplete={handleUploadComplete}
             />
-            )} 
+          )}
 
-          {/* Componente FileList */}
           <FileList
             pdfFiles={pdfFiles}
             onDownload={handleDownload}
@@ -226,7 +247,7 @@ function Dashboard({ username, userId, onLogout, userOrigem, userAgenteId }) {
             onRemoveAll={handleRemoveAllFiles}
             formatFileSize={formatFileSize}
             onStatusChange={handleStatusChange}
-            userOrigem = {userOrigem}
+            userOrigem={userOrigem}
             userAgenteId={userAgenteId}
           />
         </div>

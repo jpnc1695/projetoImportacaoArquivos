@@ -1,16 +1,9 @@
 // FileUploader.js
 import React, { useState } from 'react';
 import './ImportarArquivos.css';
+import { supabase } from '../../supabaseClient';
 
-// Funções auxiliares
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
-};
+
 
 const formatFileSize = (sizeInKB) => {
   if (sizeInKB < 1024) {
@@ -56,47 +49,70 @@ const ImportarArquivos = ({ agentes, userId, onUploadComplete }) => {
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
   const handleUpload = async () => {
     if (!validateFields()) return;
+    if (!userId) {
+      alert('Usuário não identificado. Faça login novamente.');
+      return;
+    }
+
     setIsUploading(true);
+    const uploadedRecords = [];
 
     try {
-      const newFiles = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const base64Data = await fileToBase64(file);
-          return {
-            id: Date.now() + Math.random(),
-            name: file.name,
-            size: (file.size / 1024).toFixed(2),
-            uploadDate: new Date().toLocaleDateString('pt-BR'),
-            base64Data,
-            agente: selectedAgent,
-            agenteId: agentes.find(a => a.name === selectedAgent)?.id || null,
-            numeroProcesso: processNumber,
-            userId: userId,
-            status: 'pendente',
-            tipoArquivo: processType
-          };
-        })
-      );
+      for (const file of selectedFiles) {
+        // 1. Gerar caminho único no bucket: user_id/processNumber_timestamp_random.ext
+        const fileExt = file.name.split('.').pop();
+        const safeProcessNumber = processNumber.trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `${userId}/${safeProcessNumber}_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      onUploadComplete(newFiles);
+        // 2. Upload para o Storage (bucket 'pdf-uploads')
+        const { error: uploadError } = await supabase.storage
+          .from('pdf-uploads')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // 3. Inserir metadados na tabela 'arquivos'
+        const { data: inserted, error: dbError } = await supabase
+          .from('arquivos')
+          .insert({
+            user_id: userId,
+            name: file.name,
+            size_kb: (file.size / 1024).toFixed(2),
+            status: 'pendente',
+            storage_path: fileName,
+            agenteId: agentes.find(a => a.name === selectedAgent)?.id || null,
+            processo: processNumber.trim(),
+            tipodearquivo: processType,
+            created_at: new Date().toISOString(),
+          })
+          .select();
+
+        if (dbError) throw dbError;
+
+        uploadedRecords.push(inserted[0]);
+      }
+
+      // Notifica o Dashboard com os registros inseridos
+      onUploadComplete(uploadedRecords);
 
       // Limpar formulário
       setSelectedFiles([]);
       setSelectedAgent('');
       setProcessNumber('');
       setValidationErrors({});
-      setProcessType("packing");
-
+      setProcessType('packing');
       const input = document.getElementById('pdf-upload');
       if (input) input.value = '';
 
-      alert(`${newFiles.length} arquivo(s) importado(s) com sucesso!`);
+      alert(`${uploadedRecords.length} arquivo(s) enviado(s) com sucesso!`);
     } catch (error) {
       console.error('Erro no upload:', error);
-      alert('Erro ao importar arquivos. Tente novamente.');
+      alert(`Erro ao enviar: ${error.message}`);
     } finally {
       setIsUploading(false);
     }
