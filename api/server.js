@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const app = express();
 const dotenv = require('dotenv');
-const config = require('../../config.js'); // ajuste o caminho relativo
+const config = require('../config'); // ajuste o caminho relativo
 
 const {body, validationResult} = require('express-validator');
 const { createClient } = require('@supabase/supabase-js');
